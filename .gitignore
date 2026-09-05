@@ -14,3 +14,9 @@
 logs/
 *.log
 session_dump.txt
+
+# Dados operacionais do painel - manter apenas localmente
+conversas.json
+*export*.xlsx
+*export*.csv
+*crm*.json

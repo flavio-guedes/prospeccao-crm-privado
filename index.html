@@ -122,8 +122,22 @@
 <body>
 <div class="noise"></div>
 <div id="app">
-  <div class="container">
-    <header>
+  <div v-if="!auth.checked" class="empty-state" style="padding:40px 10px">Carregando...</div>
+  <div v-else-if="!auth.ok" class="modal-backdrop" style="display:flex">
+    <div class="modal" style="max-width:420px">
+      <h3>Acesso restrito</h3>
+      <div class="form">
+        <label>Senha</label>
+        <input type="password" v-model="auth.password" @keyup.enter="doLogin" placeholder="Senha do painel" />
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" @click="doLogin">Entrar</button>
+        </div>
+        <div v-if="auth.error" style="color:#f87171;font-size:12px;margin-top:8px">{{ auth.error }}</div>
+      </div>
+    </div>
+  </div>
+  <div v-else class="container">
+    <header style="justify-content:space-between">
       <div class="brand">
         <img src="https://flavio-guedes.github.io/epq-central/logo.jpg" alt="EPQ" />
         <div>
@@ -133,6 +147,7 @@
       </div>
       <div class="actions">
         <span class="status-pill">{{ mode === 'cloud' ? '☁️ Online' : '💾 Offline' }}</span>
+        <button class="btn" @click="lock">Sair</button>
         <button class="btn primary" @click="openCreate()">Novo lead</button>
         <button class="btn" @click="exportXLS()">Exportar XLS</button>
       </div>
@@ -417,6 +432,42 @@
       const conversaDays = ref([]);
       const conversaItems = ref([]);
       const playbookSuggestions = ref([]);
+      const auth = reactive({ checked: false, ok: false, password: '', error: '' });
+      const AUTH_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+      const AUTH_KEY = 'epq_crm_auth_v1';
+      async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      async function checkAuth(){
+        try {
+          const saved = localStorage.getItem(AUTH_KEY);
+          auth.ok = saved === AUTH_HASH;
+        } catch {
+          auth.ok = false;
+        }
+        auth.checked = true;
+      }
+      async function doLogin(){
+        auth.error = '';
+        const digest = await sha256(auth.password || '');
+        if (digest === AUTH_HASH) {
+          auth.ok = true;
+          localStorage.setItem(AUTH_KEY, digest);
+          auth.password = '';
+        } else {
+          auth.error = 'Senha inválida';
+        }
+      }
+      function lock(){
+        auth.ok = false;
+        localStorage.removeItem(AUTH_KEY);
+        auth.password = '';
+        auth.error = '';
+      }
+      await checkAuth();
 
       function persist(){ writeLeads(leads.value); }
       function setMode(next){ mode.value = next; localStorage.setItem('epq_crm_mode', next); }
@@ -612,6 +663,7 @@
       }
 
       async function init(){
+        if (!auth.ok) return;
         await loadCloud();
         await loadConversas();
         loadPlaybookSuggestions();
@@ -661,6 +713,7 @@
       });
 
       return {
+        auth, doLogin, lock,
         mode, syncStatus, errorMsg,
         search, filterStage, tab, leadModal, createModal, currentLead, newLead, stages, filtered, kpis, agenda, byStage,
         openLead, closeLead, saveLead, openCreate, closeCreate, createLead, logContact, advanceStage, formatDate, formatDateTime, exportXLS, syncNow, switchToOffline,
