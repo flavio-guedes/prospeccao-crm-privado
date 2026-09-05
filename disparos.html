@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Disparos · Outreach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0f14;
+    --panel:#11161d;
+    --panel-2:#161c24;
+    --border:rgba(255,255,255,0.10);
+    --muted:#8a9bb8;
+    --white:#f3f6fb;
+    --accent:#2f7fff;
+    --accent-2:#5fe8f7;
+    --success:#34d399;
+    --warn:#fbbf24;
+    --danger:#f87171;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    color:var(--white);
+    background:radial-gradient(1200px 700px at 10% -10%, rgba(56,189,248,0.08), transparent 60%),
+      linear-gradient(180deg,#080b10,#0d1219);
+    min-height:100vh;
+  }
+  .container{max-width:1100px;margin:0 auto;padding:22px}
+  header{margin-bottom:18px}
+  h1{font-size:20px;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03));
+    border:1px solid var(--border);
+    border-radius:18px;padding:16px;margin-bottom:14px;
+  }
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px)}
+  .kpi{
+    background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:16px;padding:14px;
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .kpi .num{font-size:28px;font-weight:700;color:#fff}
+  .kpi .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+
+  label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
+  select,textarea,input[type="text"]{
+    width:100%;padding:12px 12px;border-radius:14px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--white);font-size:14px;outline:none;
+  }
+  textarea{min-height:180px;resize:vertical;line-height:1.5}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .col{display:flex;flex-direction:column;gap:12px}
+
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px)}
+  .seg button{
+    padding:12px 10px;border-radius:14px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--white);font-size:13px;cursor:pointer;
+  }
+  .seg button.active{background:#1e293b;border-color:#334155;color:#e2e8f0;font-weight:600}
+
+  .batches{display:grid;grid-template-columns:repeat(4,1fr);gap:10px)}
+  .batches button{
+    padding:12px 10px;border-radius:14px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--white);font-size:13px;cursor:pointer;
+  }
+  .batches button.active{background:#312e81;border-color:#4338ca;color:#e0e7ff;font-weight:600}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .btn{
+    border:1px solid rgba(255,255,255,0.18);color:#e6f3ff;background:rgba(255,255,255,0.08);
+    padding:10px 12px;border-radius:14px;font-size:13px;cursor:pointer;
+  }
+  .btn.primary{background:rgba(34,211,238,0.18);border-color:rgba(34,211,238,0.45);color:#cffafe}
+  .btn.primary:hover{background:rgba(34,211,238,0.28)}
+  .pill{font-size:11px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:#e6f3ff;background:rgba(255,255,255,0.08)}
+
+  .list{width:100%;border-collapse:collapse;margin-top:10px}
+  th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;padding:10px;border-bottom:1px solid var(--border)}
+  td{font-size:13px;color:var(--white);padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)}
+  tr:hover td{background:rgba(255,255,255,0.03)}
+
+  .toast{
+    position:fixed;right:18px;bottom:18px;
+    background:#0f172a;border:1px solid var(--border);color:#e6f3ff;
+    padding:10px 12px;border-radius:14px;font-size:13px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);display:none;
+  }
+  @media (max-width:760px){.kpis{grid-template-columns:1fr}.row{grid-template-columns:1fr}.seg{grid-template-columns:1fr}.batches{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Disparos</h1>
+    <div class="sub">Outreach personalizado por abordagem e segmento</div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><div class="num" id="countContacts">1</div><div class="label">Contatos</div></div>
+    <div class="kpi"><div class="num" id="countEmails">1</div><div class="label">E-mails válidos</div></div>
+    <div class="kpi"><div class="num" id="countDup">0</div><div class="label">Duplicados na seleção</div></div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <div class="col">
+        <div>
+          <label>Assunto</label>
+          <select id="subject">
+            <option>Sobre a vaga em aberto</option>
+            <option>Alinhamento rápido de próximos passos</option>
+            <option>Convite para conversa curta</option>
+            <option>Apresentação de uma opção pragmática</option>
+            <option>Confirmação de interesse e disponibilidade</option>
+          </select>
+        </div>
+        <div>
+          <label>Mensagem · ✨ abordagem personalizada</label>
+          <textarea id="message" placeholder="Escreva a mensagem do disparo..."></textarea>
+        </div>
+      </div>
+      <div class="col">
+        <div>
+          <label>Portfólio recomendado</label>
+          <div class="seg">
+            <button class="active" data-portfolio="parceria">Parceria ✔</button>
+            <button data-portfolio="produto">Produto</button>
+            <button data-portfolio="design">Design/Conteúdo</button>
+          </div>
+          <div style="margin-top:8px">
+            <a class="playbook-link" id="portfolioLink" href="https://flavio-guedes.github.io/portfolio/parceria.html" target="_blank" rel="noopener">Abrir portfólio selecionado</a>
+          </div>
+        </div>
+        <div>
+          <label>Dividir em lotes</label>
+          <div class="batches">
+            <button class="active" data-batch="all">Tudo de uma vez</button>
+            <button data-batch="20">20</button>
+            <button data-batch="30">30</button>
+            <button data-batch="50">50</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="btnSend">Enviar selecionados</button>
+          <button class="btn" id="btnCopy">Copiar mensagem</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <label>Contatos</label>
+    <table class="list">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="checkAll" /></th>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>WhatsApp</th>
+          <th>Curso/Turma</th>
+          <th>Etapa</th>
+        </tr>
+      </thead>
+      <tbody id="contactsBody"></tbody>
+    </table>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const contacts = [
+    { name:'Luis', email:'luis@example.com', whatsapp:'(21) 99971-9474', course:'Museu a Céu Aberto - Cultura e Desenvolvimento', stage:'Interessado' },
+  ];
+  const portfolios = {
+    parceria: { title:'Estratégia e Growth IA agêntica', url:'https://flavio-guedes.github.io/portfolio/parceria.html' },
+    produto: { title:'Produto', url:'https://flavio-guedes.github.io/portfolio/produto.html' },
+    design: { title:'Design Head e Conteúdo', url:'https://flavio-guedes.github.io/portfolio/designhead.html' },
+  };
+  const state = { portfolio:'parceria', batch:'all' };
+
+  function el(id){ return document.getElementById(id); }
+  function toast(msg){ const t=el('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 1800); }
+
+  function renderContacts(){
+    const tbody=el('contactsBody');
+    tbody.innerHTML='';
+    contacts.forEach((c,i)=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td><input type="checkbox" class="rowCheck" data-index="${i}" /></td>
+        <td>${c.name}</td>
+        <td>${c.email}</td>
+        <td>${c.whatsapp}</td>
+        <td>${c.course}</td>
+        <td>${c.stage}</td>`;
+      tbody.appendChild(tr);
+    });
+    updateCounts();
+  }
+  function updateCounts(){
+    const checks=document.querySelectorAll('.rowCheck:checked');
+    const selected=[...checks].map(x=>contacts[+x.dataset.index]).filter(Boolean);
+    const emails=selected.filter(c=>c.email && c.email.includes('@')).length;
+    const dup=Math.max(0, selected.length - new Set(selected.map(c=> (c.email||'').toLowerCase())).size);
+    el('countContacts').textContent=selected.length;
+    el('countEmails').textContent=emails;
+    el('countDup').textContent=dup;
+  }
+
+  document.querySelector('.seg').addEventListener('click', e=>{
+    const btn=e.target.closest('button[data-portfolio]');
+    if(!btn) return;
+    document.querySelectorAll('.seg button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.portfolio=btn.dataset.portfolio;
+    const p=portfolios[state.portfolio];
+    el('portfolioLink').href=p.url;
+    el('portfolioLink').textContent='Abrir ' + p.title;
+    buildMessage();
+  });
+
+  document.querySelector('.batches').addEventListener('click', e=>{
+    const btn=e.target.closest('button[data-batch]');
+    if(!btn) return;
+    document.querySelectorAll('.batches button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.batch=btn.dataset.batch;
+  });
+
+  el('checkAll').addEventListener('change', e=>{
+    document.querySelectorAll('.rowCheck').forEach(cb=>cb.checked=e.target.checked);
+    updateCounts();
+  });
+  el('contactsBody').addEventListener('change', ()=> updateCounts());
+
+  function buildMessage(){
+    const subject=el('subject').value;
+    const p=portfolios[state.portfolio];
+    const msg=`Olá, Luis, tudo bem?\n\nVi que a ${contacts[0].course} está com processos em aberto e fiquei curioso sobre o momento atual da equipe.\n\nAtuo como parceiro de marketing, conectando estratégia, growth e IA agêntica para estruturar operações mais eficientes e gerar mais demanda com menos esforço manual.\n\nDeixo aqui um recorte do trabalho: ${p.url}\n\nSe fizer sentido para o seu momento, seguimos por aqui.`;
+    el('message').value=msg;
+  }
+
+  el('btnCopy').addEventListener('click', async ()=>{
+    try { await navigator.clipboard.writeText(el('message').value); toast('Mensagem copiada'); }
+    catch { toast('Não foi possível copiar'); }
+  });
+  el('btnSend').addEventListener('click', ()=>{
+    const selected=[...document.querySelectorAll('.rowCheck:checked')].map(x=>contacts[+x.dataset.index]).filter(Boolean);
+    if(!selected.length){ toast('Selecione pelo menos 1 contato'); return; }
+    const batch=state.batch==='all' ? selected.length : +state.batch;
+    toast(`Disparando para ${selected.length} contato(s) em lotes de ${batch}`);
+  });
+
+  renderContacts();
+  buildMessage();
+</script>
+</body>
+</html>
