@@ -147,9 +147,9 @@
       </div>
       <div class="actions">
         <span class="status-pill">{{ mode === 'cloud' ? '☁️ Online' : '💾 Offline' }}</span>
-        <button class="btn" @click="lock">Sair</button>
+        <span v-if="saveStatus" class="status-pill" style="border-color:rgba(52,211,153,.45);color:#a7f3d0">{{ saveStatus }}</span>
         <button class="btn primary" @click="openCreate()">Novo lead</button>
-        <button class="btn" @click="exportXLS()">Exportar XLS</button>
+        <button class="btn primary" @click="saveAllToGithub()">Salvar tudo</button>
       </div>
     </header>
 
@@ -346,13 +346,23 @@
       </div>
       <label style="margin-top:10px;display:block;">Observação</label>
       <textarea v-model="currentLead.nextNote" placeholder="Descreva a próxima ação..."></textarea>
-      <div class="actions" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <div class="actions" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <button class="btn primary" @click="saveLead()">Salvar</button>
         <button class="btn" @click="logContact('WhatsApp')">Registrar WhatsApp</button>
         <button class="btn" @click="logContact('Ligação')">Registrar Ligação</button>
         <button class="btn" @click="logContact('Follow-up')">Registrar Follow-up</button>
         <button class="btn" @click="advanceStage()">Avançar etapa</button>
         <button class="btn" @click="closeLead">Fechar</button>
+        <select class="filter-select" v-model="msgType" style="padding:9px 10px;">
+          <option value="whatsapp">Canal: WhatsApp</option>
+          <option value="email">Canal: E-mail</option>
+        </select>
+        <select class="filter-select" v-model="msgTemplate" style="padding:9px 10px;">
+          <option value="frio">Template: Frio</option>
+          <option value="morno">Template: Morno</option>
+          <option value="quente">Template: Quente</option>
+          <option value="reativar">Template: Reativação</option>
+        </select>
       </div>
       <div style="margin-top:18px;">
         <div style="font-size:12px;color:#7d9cbd;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Histórico</div>
@@ -361,6 +371,19 @@
             <div class="timeline-meta">{{ formatDate(item.date) }} · {{ item.type }}</div>
             <div class="timeline-body">{{ item.note }}</div>
           </div>
+        </div>
+      </div>
+      <div style="margin-top:18px;">
+        <div style="font-size:12px;color:#7d9cbd;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Sugestões de mensagens</div>
+        <div class="timeline">
+          <div class="timeline-item" v-for="(msg, idx) in messageSuggestions" :key="idx">
+            <div class="timeline-meta">{{ msg.title }}</div>
+            <div class="timeline-body">{{ msg.text }}</div>
+            <div style="margin-top:6px;">
+              <a class="btn" style="font-size:11px;padding:6px 10px;" href="#" @click.prevent="copyText(msg.text)">Copiar</a>
+            </div>
+          </div>
+          <div v-if="!messageSuggestions.length" class="empty-state">Nenhuma sugestão no momento</div>
         </div>
       </div>
     </div>
@@ -433,6 +456,9 @@
       const conversaItems = ref([]);
       const playbookSuggestions = ref([]);
       const auth = reactive({ checked: false, ok: false, password: '', error: '' });
+      const saveStatus = ref('');
+      const msgType = ref('whatsapp');
+      const msgTemplate = ref('frio');
       const AUTH_HASH = 'dde324fd8848e432a49fd68f008d54af58667b1068d07c7fac235d4a02c34526';
       const AUTH_KEY = 'epq_crm_auth_v1';
       async function sha256(message) {
@@ -490,6 +516,106 @@
           errorMsg.value = 'Não foi possível sincronizar com o servidor.';
           setMode('offline');
         }
+      }
+      async function saveToGithub(filename, content){
+        const branch = 'main';
+        const path = filename;
+        let sha = null;
+        try {
+          const metaUrl = 'https://api.github.com/repos/flavio-guedes/prospeccao-crm-privado/contents/' + encodeURIComponent(path) + '?ref=' + branch;
+          const metaRes = await fetch(metaUrl, { headers: { Accept: 'application/vnd.github+json', Authorization: 'Bearer gho_pv9rwF6NqLlIPG4uNaVxV23rCVXV75' } });
+          if (metaRes.ok) {
+            const meta = await metaRes.json();
+            sha = meta.sha || null;
+          }
+        } catch {
+          sha = null;
+        }
+        const body = { message: 'feat: atualiza ' + filename + ' automaticamente', content: btoa(unescape(encodeURIComponent(content))), branch };
+        if (sha) body.sha = sha;
+        const res = await fetch('https://api.github.com/repos/flavio-guedes/prospeccao-crm-privado/contents/' + encodeURIComponent(path), { method: 'PUT', headers: { 'content-type':'application/json', Accept: 'application/vnd.github+json', Authorization: 'Bearer gho_pv9rwF6NqLlIPG4uNaVxV23rCVXV75' }, body: JSON.stringify(body) });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || ('HTTP ' + res.status));
+        }
+        const data = await res.json();
+        return (data.content && data.content.html_url) || (data.commit && data.commit.html_url) || 'https://github.com/flavio-guedes/prospeccao-crm-privado';
+      }
+      async function saveAllToGithub(){
+        saveStatus.value = 'Salvando...';
+        try {
+          await saveToGithub('leads.json', JSON.stringify(leads.value, null, 2));
+          const snapshot = {
+            epq_crm_mode: localStorage.getItem('epq_crm_mode'),
+            epq_crm_auth_v1: localStorage.getItem('epq_crm_auth_v1'),
+            epq_crm_leads_v2: localStorage.getItem('epq_crm_leads_v2'),
+          };
+          await saveToGithub('crm-state.json', JSON.stringify(snapshot, null, 2));
+          saveStatus.value = 'Tudo salvo';
+        } catch (e) {
+          saveStatus.value = 'Erro ao salvar tudo';
+          setTimeout(() => { if (saveStatus.value === 'Erro ao salvar tudo') saveStatus.value = ''; }, 2500);
+          return;
+        }
+        setTimeout(() => { if (saveStatus.value === 'Tudo salvo') saveStatus.value = ''; }, 2500);
+      }
+      function blobJson(){
+        return JSON.stringify(leads.value, null, 2);
+      }
+      function msgPortfolio(lead){
+        const src = ((lead.source || '') + ' ' + (lead.course || '')).toLowerCase();
+        const stage = (lead.stage || '').toLowerCase();
+        const name = lead.name || '';
+        if (/design|conteúdo|conteudo|mkt|marketing|brand|arte|social|criativo|head/.test(src)) return { title: 'Design Head e Conteúdo', url: 'https://flavio-guedes.github.io/portfolio/designhead.html' };
+        if (/produto|ux|ui|product|pm|gestão|gestao|lançamento|lancamento/.test(src)) return { title: 'Produto', url: 'https://flavio-guedes.github.io/portfolio/produto.html' };
+        if (/estrat|growth|ia|agente|automa|dados|diretor|founder|head|coordenador|comercial/.test(src)) return { title: 'Estratégia e Growth IA agêntica', url: 'https://flavio-guedes.github.io/portfolio/parceria.html' };
+        if (/matriculado|interessado|negocia/.test(stage)) return { title: 'Produto', url: 'https://flavio-guedes.github.io/portfolio/produto.html' };
+        return { title: 'Portfolio Flavio', url: 'https://flavio-guedes.github.io/portfolio/parceria.html' };
+      }
+      function msgPersona(lead){
+        const src = ((lead.source || '') + ' ' + (lead.course || '')).toLowerCase();
+        const temp = (lead.temperature || '').toLowerCase();
+        if (/design|conteúdo|conteudo|mkt|marketing|brand|arte|social|criativo/.test(src)) return 'diretor de marketing / head de conteúdo';
+        if (/produto|ux|ui|product|pm|gestão|gestao/.test(src)) return 'head de produto / gestor';
+        if (/estrat|growth|ia|agente|automa|dados/.test(src)) return 'diretor / head de growth';
+        if (temp === 'quente') return 'decisor interessado';
+        return 'lead comercial';
+      }
+      function messageSuggestions(){
+        if (!currentLead.value) return [];
+        const lead = currentLead.value;
+        const name = lead.name ? lead.name.split(' ')[0] : '';
+        const persona = msgPersona(lead);
+        const port = msgPortfolio(lead);
+        const temp = (lead.temperature || '').toLowerCase();
+        const stage = (lead.stage || '').toLowerCase();
+        const tipo = (msgType.value || 'whatsapp').toLowerCase();
+        const canal = tipo === 'email' ? 'E-mail' : 'WhatsApp';
+        const saudacao = tipo === 'email' ? 'Olá' : 'Olá';
+        const despedida = tipo === 'email' ? 'Abs,' : 'Qualquer coisa me avisa!';
+        const assinatura = tipo === 'email' ? 'Flávio Guedes — ' + port.title + '\n' + port.url : 'Flávio Guedes\n' + port.url;
+        const chamada = tipo === 'email' ? 'abre o link abaixo' : 'dá uma olhada no link';
+        const follow = tipo === 'email' ? 'se quiser, monto um resumo por e-mail' : 'se quiser, te envio um resumo';
+        let text = '';
+        if (msgTemplate.value === 'frio'){
+          text = saudacao + ', tudo bem?\n\nVi seu contexto de ' + lead.course + ' e acredito que essa conversa pode ser útil para você, sem abertura comercial agressiva.\n\nAqui tem um material alinhado ao seu perfil: ' + chamada + ' para conhecer como trabalho como ' + port.title + '.\n' + port.url + '\n\nSe fizer sentido para o seu momento, seguimos por aqui. ' + follow + '.';
+        } else if (msgTemplate.value === 'quente'){
+          text = saudacao + ', tudo bem?\n\nPelos sinais que você já deu, faz sentido avançar para um passo pequeno: definir um objetivo curto e um formato simples de resultado.\n\nEste portfolio pode ajudar a alinhar expectativas: ' + chamada + ' — ' + port.title + '.\n' + port.url + '\n\nSe for útil, podemos tratar como um próximo passo concreto, sem enrolação.';
+        } else if (msgTemplate.value === 'reativar'){
+          text = saudacao + ', tudo bem?\n\nSei que a agenda do ' + persona + ' costuma ser corrida, então já deixei o material direto ao ponto.\n\nVeja aqui: ' + port.url + '\n\nSe quiser, responda com 1 melhor horário para um contato rápido. ' + follow + '.';
+        } else {
+          text = saudacao + ', tudo bem?\n\nVi seu contexto de ' + lead.course + ' e acho que vale uma troca objetiva, sem pressão.\n\nAqui tem um material alinhado ao seu momento: ' + chamada + ' — ' + port.title + '.\n' + port.url + '\n\nSe fizer sentido, eu continuo por aqui. ' + follow + '.';
+        }
+        return [
+          { title: canal + ' · ' + (msgTemplate.value === 'frio' ? 'Primeiro toque' : msgTemplate.value === 'quente' ? 'Avanço rápido' : 'Reativação direta'), text },
+          { title: 'Sugestão · Follow-up', text: saudacao + ', só passando para confirmar: o link chegou bem? ' + port.url + ' Se fizer sentido para ' + lead.course + ', seguimos com um próximo passo simples.' },
+          { title: 'Sugestão · Proposta', text: saudacao + ', podemos estruturar um próximo passo simples em ' + lead.course + ':\n1) objetivo curto\n2) resultado prático\n3) formato e prazo\n\nReferência: ' + port.url + '\n\nSe quiser, te envio um resumo curto para aprovação.' }
+        ];
+      }
+      async function copyText(text){
+        try {
+          if (navigator && navigator.clipboard) await navigator.clipboard.writeText(text);
+        } catch {}
       }
       function fromApi(l){
         return {
@@ -604,7 +730,10 @@
           if (idx >= 0) leads.value[idx] = merged; else leads.value.unshift(merged);
           currentLead.value = merged;
           persist();
+          saveStatus.value = 'Salvo';
         } catch { errorMsg.value = 'Falha ao salvar no modo online.'; }
+        saveStatus.value = 'Salvo offline';
+        setTimeout(() => { if (saveStatus.value === 'Salvo offline') saveStatus.value = ''; }, 2500);
         closeLead();
       }
 
@@ -624,6 +753,8 @@
         } catch { errorMsg.value = 'Falha ao criar no modo online. Usando armazenamento local.'; leads.value.unshift(payload); persist(); }
         resetForm();
         closeCreate();
+        saveStatus.value = 'Criado';
+        setTimeout(() => { if (saveStatus.value === 'Criado') saveStatus.value = ''; }, 2500);
       }
 
       async function logContact(type){
@@ -667,6 +798,12 @@
         await loadCloud();
         await loadConversas();
         loadPlaybookSuggestions();
+        try {
+          const raw = JSON.stringify(leads.value, null, 2);
+          await saveToGithub('leads.json', raw);
+        } catch (e) {
+          errorMsg.value = 'Falha ao salvar inicial no GitHub: ' + (e && e.message ? e.message : 'erro');
+        }
       }
       init();
 
@@ -714,10 +851,10 @@
 
       return {
         auth, doLogin, lock,
-        mode, syncStatus, errorMsg,
+        mode, syncStatus, errorMsg, saveStatus,
         search, filterStage, tab, leadModal, createModal, currentLead, newLead, stages, filtered, kpis, agenda, byStage,
-        openLead, closeLead, saveLead, openCreate, closeCreate, createLead, logContact, advanceStage, formatDate, formatDateTime, exportXLS, syncNow, switchToOffline,
-        conversaTab, conversaDays, conversaItems, filteredConversas, playbookSuggestions,
+        openLead, closeLead, saveLead, openCreate, closeCreate, createLead, logContact, advanceStage, formatDate, formatDateTime, exportXLS, syncNow, switchToOffline, saveToGithub, saveAllToGithub,
+        conversaTab, conversaDays, conversaItems, filteredConversas, playbookSuggestions, messageSuggestions, msgType, msgTemplate, copyText,
       };
     }
   }).mount('#app');
