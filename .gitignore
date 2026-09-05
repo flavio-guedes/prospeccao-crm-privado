@@ -1,0 +1,16 @@
+# Dados locais e segredos
+.env
+.env.*
+*.key
+*.pem
+*.secret
+
+# Backups e exportações operacionais
+*.bak
+*-backup/
+*.tmp
+
+# Logs e arquivos de sessão
+logs/
+*.log
+session_dump.txt
