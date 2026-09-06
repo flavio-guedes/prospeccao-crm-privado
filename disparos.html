@@ -179,11 +179,16 @@
     { name:'Luis', email:'luis@example.com', whatsapp:'(21) 99971-9474', course:'Museu a Céu Aberto - Cultura e Desenvolvimento', stage:'Interessado' },
   ];
   const portfolios = {
-    parceria: { title:'Estratégia e Growth IA agêntica', url:'https://flavio-guedes.github.io/portfolio/parceria.html' },
-    produto: { title:'Produto', url:'https://flavio-guedes.github.io/portfolio/produto.html' },
-    design: { title:'Design Head e Conteúdo', url:'https://flavio-guedes.github.io/portfolio/designhead.html' },
+    parceria: { title:'Estratégia e Growth IA agêntica', url:'https://flavio-guedes.github.io/portfolio/parceria.html', approach:'parceria' },
+    produto: { title:'Produto', url:'https://flavio-guedes.github.io/portfolio/produto.html', approach:'produto' },
+    design: { title:'Design Head e Conteúdo', url:'https://flavio-guedes.github.io/portfolio/designhead.html', approach:'design' },
   };
   const state = { portfolio:'parceria', batch:'all' };
+  const approaches = {
+    parceria: 'Conecto estratégia, growth e IA agêntica para gerar mais demanda com menos esforço manual.',
+    produto: 'Ajudo a transformar ideias em produto real, com fluxo, priorização e entrega.',
+    design: 'Direciono design e conteúdo para gerar clareza, conversão e consistência da marca.',
+  };
 
   function el(id){ return document.getElementById(id); }
   function toast(msg){ const t=el('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none', 1800); }
@@ -242,7 +247,8 @@
   function buildMessage(){
     const subject=el('subject').value;
     const p=portfolios[state.portfolio];
-    const msg=`Olá, Luis, tudo bem?\n\nVi que a ${contacts[0].course} está com processos em aberto e fiquei curioso sobre o momento atual da equipe.\n\nAtuo como parceiro de marketing, conectando estratégia, growth e IA agêntica para estruturar operações mais eficientes e gerar mais demanda com menos esforço manual.\n\nDeixo aqui um recorte do trabalho: ${p.url}\n\nSe fizer sentido para o seu momento, seguimos por aqui.`;
+    const a=approaches[p.approach] || '';
+    const msg=`Olá, Luis, tudo bem?\n\nVi que a ${contacts[0].course} está com processos em aberto e fiquei curioso sobre o momento atual da equipe.\n\n${a}\n\nDeixo aqui um recorte do trabalho: ${p.url}\n\nSe fizer sentido para o seu momento, seguimos por aqui.`;
     el('message').value=msg;
   }
 
