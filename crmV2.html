@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EPQ · CRM V2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0a0b0f; --bg2:#111319; --panel:#15171f; --panel2:#1b1e28;
+  --border:#262a36; --border-soft:#1e212b;
+  --text:#e8e9ee; --text-dim:#9599a8; --text-faint:#5c6070;
+  --accent:#6d5bff; --accent2:#4f9dff; --accent-glow:rgba(109,91,255,.25);
+  --ok:#33c17a; --warn:#e8b339; --danger:#e8546b; --info:#4f9dff;
+  --radius:14px; --radius-sm:9px;
+  --font: -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--font); background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(109,91,255,.10), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgba(79,157,255,.08), transparent 55%),
+    var(--bg);
+  color:var(--text); min-height:100vh; padding-bottom:110px;
+}
+::selection{background:var(--accent-glow);}
+.wrap{max-width:1320px; margin:0 auto; padding:22px 18px 40px;}
+header.top{display:flex; flex-direction:column; gap:4px; margin-bottom:22px;}
+.eyebrow{font-size:11px; letter-spacing:2.5px; color:var(--accent2); font-weight:700; text-transform:uppercase;}
+h1{font-size:26px; font-weight:800; letter-spacing:-.5px; display:flex; align-items:center; gap:10px;}
+h1 .dot{width:9px;height:9px;border-radius:50%; background:var(--ok); box-shadow:0 0 12px var(--ok);}
+.subtitle{color:var(--text-dim); font-size:13.5px; margin-top:2px;}
+
+.cards-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin:20px 0 18px;}
+@media(max-width:1100px){.cards-grid{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:640px){.cards-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 14px 12px; position:relative; overflow:hidden;}
+.stat-card .val{font-size:22px; font-weight:800; letter-spacing:-.5px;}
+.stat-card .lbl{font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-top:3px; font-weight:600;}
+.stat-card.accent{border-color:rgba(109,91,255,.4); box-shadow:0 0 0 1px rgba(109,91,255,.15) inset;}
+.stat-card.accent .val{color:var(--accent2);}
+.stat-card.ok .val{color:var(--ok);}
+.stat-card.warn .val{color:var(--warn);}
+.stat-card.danger .val{color:var(--danger);}
+
+.insight{background:linear-gradient(135deg, rgba(109,91,255,.10), rgba(79,157,255,.05)); border:1px solid rgba(109,91,255,.3); border-radius:var(--radius); padding:16px 18px; margin-bottom:22px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;}
+.insight .txt{font-size:13.5px; line-height:1.55; color:var(--text);}
+.insight .txt b{color:var(--accent2);}
+.insight-tag{font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent2); font-weight:700; margin-bottom:4px;}
+.btn{border:none; cursor:pointer; font-family:inherit; font-weight:600; border-radius:9px; transition:.15s; white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; padding:10px 16px; font-size:13px; box-shadow:0 4px 16px var(--accent-glow);}
+.btn-primary:hover{filter:brightness(1.12); transform:translateY(-1px);}
+.btn-ghost{background:var(--panel2); color:var(--text); border:1px solid var(--border); padding:9px 14px; font-size:12.5px;}
+.btn-ghost:hover{background:#20232e; border-color:#333748;}
+.btn-sm{padding:6px 10px; font-size:11.5px; border-radius:7px;}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+
+.tier-nav{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:22px;}
+@media(max-width:900px){.tier-nav{grid-template-columns:repeat(2,1fr);}}
+.tier-card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm); padding:13px 14px; cursor:pointer; transition:.15s; text-align:left;}
+.tier-card:hover{border-color:var(--accent); transform:translateY(-2px);}
+.tier-card.active{border-color:var(--accent); background:linear-gradient(180deg,rgba(109,91,255,.12),var(--panel)); box-shadow:0 0 0 1px var(--accent) inset;}
+.tier-card .name{font-size:12.5px; font-weight:700; color:var(--text);}
+.tier-card .count{font-size:19px; font-weight:800; margin-top:5px;}
+.tier-card .meta{font-size:10.5px; color:var(--text-faint); margin-top:3px;}
+
+.toolbar{display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin-bottom:14px;}
+.search-box{flex:1; min-width:220px; position:relative;}
+.search-box input{width:100%; background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:10px 14px 10px 34px; color:var(--text); font-size:13px; font-family:inherit;}
+.search-box input:focus{outline:none; border-color:var(--accent);}
+.search-box::before{content:"⌕"; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-faint); font-size:15px;}
+select.filter{background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:9px; padding:9px 10px; font-size:12.5px; font-family:inherit;}
+
+.chip-row{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
+.chip{background:var(--panel); border:1px solid var(--border); color:var(--text-dim); padding:7px 12px; border-radius:20px; font-size:12px; cursor:pointer; font-weight:600;}
+.chip:hover{color:var(--text); border-color:#3a3f52;}
+.chip.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+.chip .n{opacity:.7; font-weight:400; margin-left:4px;}
+
+.bulk-row{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px;}
+
+.list-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; color:var(--text-dim); font-size:12px;}
+
+.contact{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm); padding:13px 14px; margin-bottom:8px; display:grid; grid-template-columns:24px 1fr auto; gap:12px; align-items:start; transition:.12s;}
+.contact:hover{border-color:#333748;}
+.contact.sel{border-color:var(--accent); background:linear-gradient(180deg,rgba(109,91,255,.07),var(--panel));}
+.contact input[type=checkbox]{width:17px; height:17px; margin-top:2px; accent-color:var(--accent); cursor:pointer;}
+.c-main{min-width:0;}
+.c-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.c-name{font-weight:700; font-size:14px;}
+.c-empresa{font-size:12px; color:var(--text-dim);}
+.c-cargo{font-size:12px; color:var(--text-faint);}
+.c-email{font-size:12px; color:var(--accent2); margin-top:4px; word-break:break-all;}
+.badge{font-size:9.5px; padding:2px 7px; border-radius:5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;}
+.badge-tier{background:rgba(79,157,255,.14); color:var(--accent2); border:1px solid rgba(79,157,255,.3);}
+.badge-sub{background:rgba(109,91,255,.14); color:#b3a8ff; border:1px solid rgba(109,91,255,.3);}
+.badge-personalizada{background:rgba(255,196,79,.14); color:#ffd479; border:1px solid rgba(255,196,79,.35);}
+.prio{font-size:13px;}
+.c-side{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+select.status-sel{background:var(--panel2); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:6px 8px; font-size:11.5px; font-family:inherit; cursor:pointer;}
+.status-Pendente{color:var(--text-dim);}
+.status-Selecionado{color:var(--accent2);}
+.status-Enviado{color:var(--warn);}
+.status-Retorno-OK{color:var(--ok);}
+.status-Sem-resposta{color:var(--text-faint);}
+.status-Ganho{color:var(--ok); font-weight:700;}
+.status-Perdido{color:var(--danger);}
+
+.pagination{display:flex; justify-content:center; align-items:center; gap:10px; margin:18px 0 6px; color:var(--text-dim); font-size:12.5px;}
+
+.action-bar{position:fixed; bottom:0; left:0; right:0; background:rgba(15,16,22,.92); backdrop-filter:blur(14px); border-top:1px solid var(--border); padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; z-index:50;}
+.action-bar .count{font-size:13px; font-weight:700;}
+.action-bar .count b{color:var(--accent2); font-size:16px;}
+.action-buttons{display:flex; gap:8px; flex-wrap:wrap;}
+
+.modal-bg{display:none; position:fixed; inset:0; background:rgba(5,6,10,.7); backdrop-filter:blur(3px); z-index:100; align-items:flex-start; justify-content:center; overflow-y:auto; padding:30px 14px;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg2); border:1px solid var(--border); border-radius:16px; max-width:620px; width:100%; padding:24px; margin-bottom:40px;}
+.modal h2{font-size:18px; margin-bottom:2px;}
+.modal .sub{color:var(--text-dim); font-size:12.5px; margin-bottom:16px;}
+.modal-row{display:flex; gap:10px; margin-bottom:14px;}
+.modal-stat{flex:1; background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:10px; text-align:center;}
+.modal-stat .v{font-size:18px; font-weight:800;}
+.modal-stat .l{font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.5px;}
+.field-label{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-faint); font-weight:700; margin:14px 0 6px;}
+.modal select, .modal input[type=text]{width:100%; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 11px; font-size:13px; font-family:inherit;}
+.modal textarea{width:100%; min-height:170px; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:11px; font-size:13px; font-family:inherit; line-height:1.5; resize:vertical;}
+.portfolio-pick{display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;}
+.portfolio-opt{flex:1; min-width:130px; border:1px solid var(--border); background:var(--panel); border-radius:9px; padding:10px; cursor:pointer; font-size:12px; text-align:center; font-weight:600; color:var(--text-dim);}
+.portfolio-opt.active{border-color:var(--accent); color:#fff; background:rgba(109,91,255,.18);}
+.modal-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:18px;}
+.modal-actions .btn{width:100%;}
+.close-x{position:absolute; top:16px; right:20px; background:none; border:none; color:var(--text-faint); font-size:22px; cursor:pointer;}
+.modal{position:relative;}
+.toast{position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ok); color:#04140b; font-weight:700; font-size:13px; padding:11px 20px; border-radius:30px; opacity:0; pointer-events:none; transition:.25s; z-index:200; box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.empty-state{text-align:center; padding:50px 20px; color:var(--text-faint);}
+.global-actions{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+.hint{font-size:11.5px; color:var(--text-faint); margin-top:-8px; margin-bottom:16px;}
+.section-title{font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-faint); font-weight:700; margin:6px 0 10px;}
+
+/* ===== abas principais ===== */
+.top-tabs{max-width:1320px; margin:0 auto; padding:16px 18px 0; display:flex; gap:8px;}
+.top-tab{background:var(--panel); border:1px solid var(--border); color:var(--text-dim); padding:10px 18px; border-radius:10px 10px 0 0; font-size:13px; font-weight:700; cursor:pointer; border-bottom:none; transition:.15s;}
+.top-tab:hover{color:var(--text);}
+.top-tab.active{background:var(--bg2); color:#fff; border-color:var(--accent); box-shadow:0 -2px 0 var(--accent) inset;}
+.view-pane{display:none;}
+.view-pane.active{display:block;}
+
+/* ===== CRM kanban ===== */
+.crm-wrap{max-width:1320px; margin:0 auto; padding:22px 18px 60px;}
+.crm-head{display:flex; justify-content:space-between; align-items:flex-end; gap:14px; margin-bottom:18px; flex-wrap:wrap;}
+.crm-head .sub{color:var(--text-dim); font-size:13px; max-width:640px;}
+.crm-board{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; align-items:start;}
+@media(max-width:1000px){.crm-board{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.crm-board{grid-template-columns:1fr;}}
+.crm-col{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:12px; min-height:120px;}
+.crm-col-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border-soft);}
+.crm-col-title{font-size:12.5px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; display:flex; align-items:center; gap:7px;}
+.crm-dot{width:8px; height:8px; border-radius:50%;}
+.crm-col[data-stage="Monitorando"] .crm-dot{background:var(--accent2);}
+.crm-col[data-stage="Enviado"] .crm-dot{background:var(--warn);}
+.crm-col[data-stage="Reunião"] .crm-dot{background:#b3a8ff;}
+.crm-col[data-stage="Ganho"] .crm-dot{background:var(--ok);}
+.crm-col-count{background:var(--panel2); border:1px solid var(--border); color:var(--text-dim); font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px;}
+.crm-card{background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:11px 12px; margin-bottom:9px;}
+.crm-card:hover{border-color:#3a3f52;}
+.crm-card .n{font-weight:700; font-size:13px;}
+.crm-card .e{font-size:11.5px; color:var(--text-dim); margin-top:2px;}
+.crm-card .em{font-size:11px; color:var(--accent2); margin-top:4px; word-break:break-all;}
+.crm-card .tags{display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;}
+.crm-tag{font-size:9.5px; padding:2px 6px; border-radius:5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; background:rgba(79,157,255,.14); color:var(--accent2); border:1px solid rgba(79,157,255,.3);}
+.crm-tag.lost{background:rgba(232,84,107,.14); color:var(--danger); border-color:rgba(232,84,107,.35);}
+.crm-card-actions{display:flex; gap:5px; margin-top:9px; flex-wrap:wrap;}
+.crm-mini-btn{background:var(--panel); border:1px solid var(--border); color:var(--text-dim); font-size:10.5px; font-weight:700; padding:5px 8px; border-radius:6px; cursor:pointer; font-family:inherit;}
+.crm-mini-btn:hover{color:var(--text); border-color:#3a3f52;}
+.crm-mini-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; border:none;}
+.crm-mini-btn:disabled{opacity:.35; cursor:not-allowed;}
+.crm-empty{color:var(--text-faint); font-size:12px; text-align:center; padding:24px 8px;}
+.crm-add-box{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center;}
+.crm-add-box select, .crm-add-box input[type=text]{background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 11px; font-size:12.5px; font-family:inherit;}
+.crm-add-box input[type=text]{flex:1; min-width:220px;}
+</style>
+<style>
+:root {
+
+    --bg-deep:#04070f;
+    --blue:#2f7fff;
+    --cyan:#5fe8f7;
+    --white:#f3f6fb;
+    --mute:#8a9bb8;
+    --mute-dim:#5c6a82;
+    --radius:18px;
+    --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  
+}
+  * {
+box-sizing:border-box;margin:0;padding:0
+}
+  html,body {
+height:100%
+}
+  body {
+
+    font-family:var(--font-sans);
+    color:var(--white);
+    background:radial-gradient(1200px 700px at 10% -10%, rgba(56,189,248,0.10), transparent 60%),
+      radial-gradient(1000px 600px at 110% 10%, rgba(99,102,241,0.10), transparent 55%),
+      linear-gradient(180deg,#05080f,#0b1428);
+    min-height:100vh;
+    overflow-x:hidden;
+  
+}
+  #viewProspeccao #app .noise {
+
+    position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.08;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size:220px 220px;
+  
+}
+  #viewProspeccao #app #app {
+position:relative;z-index:1
+}
+  #viewProspeccao #app .container {
+max-width:1400px;margin:0 auto;padding:24px
+}
+  #viewProspeccao #app header {
+
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;
+  
+}
+  #viewProspeccao #app .brand {
+display:flex;align-items:center;gap:12px
+}
+  #viewProspeccao #app .brand img {
+height:36px;width:36px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.08);padding:4px
+}
+  #viewProspeccao #app h1 {
+font-size:20px;letter-spacing:.2px;color:#ffffff
+}
+  #viewProspeccao #app .sub {
+color:#7d9cbd;font-size:13px;margin-top:2px
+}
+  #viewProspeccao #app .actions {
+display:flex;gap:10px;flex-wrap:wrap
+}
+  #viewProspeccao #app .btn {
+
+    border:1px solid rgba(255,255,255,0.18);color:#e6f3ff;background:rgba(255,255,255,0.08);padding:9px 12px;border-radius:12px;font-size:13px;cursor:pointer;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:background .15s ease, border-color .15s ease;
+  
+}
+  #viewProspeccao #app .btn:hover {
+background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.32)
+}
+  #viewProspeccao #app .btn.primary {
+background:rgba(34,211,238,0.18);border-color:rgba(34,211,238,0.45);color:#cffafe
+}
+  #viewProspeccao #app .btn.primary:hover {
+background:rgba(34,211,238,0.28);border-color:rgba(34,211,238,0.65)
+}
+  #viewProspeccao #app .panel {
+
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:18px; padding:18px; margin-bottom:18px;
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  
+}
+  #viewProspeccao #app .kpis {
+display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px
+}
+  #viewProspeccao #app .kpi {
+background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:14px
+}
+  #viewProspeccao #app .kpi .num {
+font-size:22px;font-weight:700;color:#ffffff
+}
+  #viewProspeccao #app .kpi .label {
+font-size:11px;color:#7d9cbd;text-transform:uppercase;letter-spacing:.12em;margin-top:4px
+}
+  #viewProspeccao #app .toolbar {
+display:flex;gap:10px;align-items:center;flex-wrap:wrap
+}
+  #viewProspeccao #app .search {
+
+    flex:1 1 260px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e6f3ff;font-size:13px;min-width:0;
+  
+}
+  #viewProspeccao #app .filter-select {
+
+    padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e6f3ff;font-size:13px;
+  
+}
+  option {
+background:#0f1b33;color:#e6f3ff
+}
+  #viewProspeccao #app .funnel {
+display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:18px
+}
+  #viewProspeccao #app .stage {
+
+    background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:12px;cursor:pointer;transition:border-color .15s ease, transform .15s ease;
+  
+}
+  #viewProspeccao #app .stage:hover {
+border-color:rgba(34,211,238,0.5);transform:translateY(-2px)
+}
+  #viewProspeccao #app .stage .name {
+font-size:11px;color:#7d9cbd;text-transform:uppercase;letter-spacing:.14em;margin-bottom:6px
+}
+  #viewProspeccao #app .stage .count {
+font-size:20px;font-weight:700;color:#ffffff
+}
+  #viewProspeccao #app .table-wrap {
+overflow-x:auto
+}
+  #viewProspeccao #app table {
+width:100%;border-collapse:collapse;min-width:900px
+}
+  #viewProspeccao #app th {
+text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#7d9cbd;padding:12px 10px;border-bottom:1px solid rgba(255,255,255,0.12)
+}
+  #viewProspeccao #app td {
+font-size:13px;color:#e6f3ff;padding:12px 10px;border-bottom:1px solid rgba(255,255,255,0.08);vertical-align:middle
+}
+  #viewProspeccao #app tr:hover td {
+background:rgba(255,255,255,0.04)
+}
+  #viewProspeccao #app .badge {
+display:inline-block;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid transparent
+}
+  #viewProspeccao #app .badge.frio {
+background:rgba(148,163,184,.15);color:#e2e8f0;border-color:rgba(148,163,184,.35)
+}
+  #viewProspeccao #app .badge.morno {
+background:rgba(251,191,36,.15);color:#fef3c7;border-color:rgba(251,191,36,.35)
+}
+  #viewProspeccao #app .badge.quente {
+background:rgba(239,68,68,.15);color:#ffd8d4;border-color:rgba(239,68,68,.35)
+}
+  #viewProspeccao #app .modal-backdrop {
+
+    position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:100;padding:24px;
+  
+}
+  #viewProspeccao #app .modal {
+
+    background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(17,27,45,.95));border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:18px;width:100%;max-width:860px;max-height:90vh;overflow:auto;
+  
+}
+  #viewProspeccao #app .modal h3 {
+font-size:16px;color:#ffffff;margin-bottom:8px
+}
+  #viewProspeccao #app .form {
+display:grid;gap:10px
+}
+  #viewProspeccao #app .form label {
+font-size:12px;color:#7d9cbd
+}
+  #viewProspeccao #app .form input, #viewProspeccao #app .form select, #viewProspeccao #app .form textarea {
+
+    padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e6f3ff;font-size:13px;
+  
+}
+  #viewProspeccao #app .form textarea {
+min-height:80px;resize:vertical
+}
+  #viewProspeccao #app .row {
+display:grid;grid-template-columns:repeat(2,1fr);gap:12px
+}
+  #viewProspeccao #app .timeline {
+display:grid;gap:10px;margin-top:12px
+}
+  #viewProspeccao #app .timeline-item {
+display:flex;gap:12px;align-items:flex-start;padding:10px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10)
+}
+  #viewProspeccao #app .timeline-meta {
+font-size:12px;color:#7d9cbd;min-width:120px
+}
+  #viewProspeccao #app .timeline-body {
+font-size:13px;color:#e6f3ff
+}
+  #viewProspeccao #app .agenda {
+display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px
+}
+  #viewProspeccao #app .agenda-col {
+background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:12px
+}
+  #viewProspeccao #app .agenda-title {
+font-size:12px;color:#7d9cbd;text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px
+}
+  #viewProspeccao #app .agenda-item {
+padding:10px;border-radius:12px;background:rgba(255,255,255,0.04);margin-bottom:8px;cursor:pointer;border:1px solid rgba(255,255,255,0.10)
+}
+  #viewProspeccao #app .agenda-item:hover {
+border-color:rgba(34,211,238,0.4)
+}
+  #viewProspeccao #app .agenda-item .name {
+font-size:13px;color:#ffffff;font-weight:500
+}
+  #viewProspeccao #app .agenda-item .meta {
+font-size:12px;color:#7d9cbd;margin-top:4px
+}
+  #viewProspeccao #app .status-pill {
+font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);color:#e6f3ff;background:rgba(255,255,255,0.08)
+}
+  #viewProspeccao #app .empty-state {
+color:#7d9cbd;font-size:13px;padding:18px 10px;text-align:center;
+}
+  #viewProspeccao #app .sub {
+color:#7d9cbd;font-size:12px;margin-bottom:10px;margin-top:4px
+}
+  #viewProspeccao #app .playbook-link {
+color:#7dd3fc;text-decoration:none;font-size:12px
+}
+  #viewProspeccao #app .playbook-link:hover {
+text-decoration:underline
+}
+  @media (max-width:1024px){#viewProspeccao #app .kpis {
+grid-template-columns:repeat(3,1fr)
+}#viewProspeccao #app .funnel {
+grid-template-columns:repeat(4,1fr)
+}#viewProspeccao #app .agenda {
+grid-template-columns:1fr
+}}
+  @media (max-width:760px){#viewProspeccao #app .kpis {
+grid-template-columns:repeat(2,1fr)
+}#viewProspeccao #app .funnel {
+grid-template-columns:repeat(3,1fr)
+}#viewProspeccao #app .row {
+grid-template-columns:1fr
+}}
+</style>
+</head>
+<body>
+</head>
+<body>
+<div class="top-tabs">
+  <button class="top-tab active" id="tabBtnProspeccao">📋 Prospecção</button>
+  <button class="top-tab" id="tabBtnCrm">🧩 CRM · Funil</button>
+</div>
+<div class="wrap view-pane active" id="viewProspeccao">
+  <header class="top">
+    <div class="eyebrow">Flávio Guedes · Base de Contatos</div>
+    <h1><span class="dot"></span>Prospecção · Command Center</h1>
+    <div class="subtitle">Gestão de contatos, segmentação e preparação de disparos — apenas contatos com e-mail válido</div>
+  </header>
+
+  <div class="cards-grid" id="statsGrid"></div>
+
+  <div class="insight" id="insightBox"></div>
+
+  <div class="global-actions">
+    <button class="btn btn-primary" id="btnCopyAll">📋 Copiar todos os e-mails do banco (<span id="totalEmailsCount">0</span>)</button>
+    <button class="btn btn-ghost" id="btnExport">⤓ Exportar status (backup)</button>
+    <button class="btn btn-ghost" id="btnImport">⤒ Importar status</button>
+    <button class="btn btn-ghost" id="btnSaveAll">💾 Salvar tudo</button>
+    <button class="btn btn-ghost" id="btnLoadAll">📂 Carregar tudo</button>
+    <button class="btn btn-ghost btn-sm" id="btnGithubLogin">🔑 Login GitHub</button>
+    <button class="btn btn-ghost btn-sm" id="btnGithubLogout">Sair</button>
+    <span id="githubStatus" style="font-size:11px;color:var(--text-faint);">desconectado</span>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+    <input type="file" id="loadFile" accept=".json" style="display:none">
+  </div>
+
+  <div class="section-title">Tiers</div>
+  <div class="tier-nav" id="tierNav"></div>
+
+  <div class="section-title" id="subtypeTitle" style="display:none">Subtipos</div>
+  <div class="chip-row" id="subtypeChips"></div>
+
+  <div class="toolbar">
+    <div class="search-box"><input type="text" id="searchInput" placeholder="Buscar por nome, empresa, cargo ou e-mail..."></div>
+    <select class="filter" id="statusFilter">
+      <option value="">Status: Todos</option>
+    </select>
+    <select class="filter" id="prioFilter">
+      <option value="">Prioridade: Todas</option>
+      <option value="Alta">🔥 Alta</option>
+      <option value="Média">🟡 Média</option>
+      <option value="Média-Baixa">🟡 Média-Baixa</option>
+      <option value="Baixa">⚪ Baixa</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" id="btnClearFilters">Limpar filtros</button>
+  </div>
+
+  <div class="bulk-row">
+    <button class="btn btn-ghost btn-sm" id="selPage">☑ Selecionar página</button>
+    <button class="btn btn-ghost btn-sm" id="selSubtype">☑ Selecionar subtipo atual</button>
+    <button class="btn btn-ghost btn-sm" id="selTier">☑ Selecionar tier atual</button>
+    <button class="btn btn-ghost btn-sm" id="selFiltered">☑ Selecionar todos filtrados</button>
+    <button class="btn btn-ghost btn-sm" id="clearSel">✕ Limpar seleção</button>
+  </div>
+
+  <div class="list-head"><span id="listCount">0 contatos</span><span id="pageInfo"></span></div>
+  <div id="contactList"></div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<div class="action-bar">
+  <div class="count"><b id="selCount">0</b> contato(s) selecionado(s)</div>
+  <div class="action-buttons">
+    <button class="btn btn-ghost btn-sm" id="btnCopyEmails">Copiar e-mails</button>
+    <button class="btn btn-ghost btn-sm" id="btnCopyCCO">Copiar p/ CCO</button>
+    <button class="btn btn-ghost btn-sm" id="btnAddToCrm">🧩 Adicionar ao CRM</button>
+    <button class="btn btn-primary" id="btnPrepararDisparo">🚀 Preparar disparo</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <button class="close-x" id="modalClose">×</button>
+    <h2>Preparar disparo</h2>
+    <div class="sub" id="modalSub">Grupo selecionado</div>
+    <div class="modal-row">
+      <div class="modal-stat"><div class="v" id="mContatos">0</div><div class="l">Contatos</div></div>
+      <div class="modal-stat"><div class="v" id="mValidos">0</div><div class="l">E-mails válidos</div></div>
+      <div class="modal-stat"><div class="v" id="mDup">0</div><div class="l">Duplicados na seleção</div></div>
+    </div>
+    <div class="field-label">Assunto</div>
+    <select id="mSubjectSelect"></select>
+    <input type="text" id="mSubject" style="margin-top:8px">
+    <div class="field-label">Mensagem <span id="mMsgTag" style="text-transform:none; font-weight:600; letter-spacing:0;"></span></div>
+    <textarea id="mMessage"></textarea>
+    <div class="field-label">Portfólio recomendado</div>
+    <div class="portfolio-pick" id="portfolioPick"></div>
+    <div class="field-label">Dividir em lotes</div>
+    <div class="portfolio-pick" id="batchSizePick"></div>
+    <div class="hint">Envie um lote por vez para reduzir risco de bloqueio/spam.</div>
+    <div id="batchNavWrap" style="display:none; margin-top:6px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:8px 10px;">
+        <button class="btn btn-ghost btn-sm" id="batchPrev">← Lote anterior</button>
+        <span id="batchLabel" style="font-size:12px; color:var(--text); font-weight:600;"></span>
+        <button class="btn btn-ghost btn-sm" id="batchNext">Próximo lote →</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="mCopyEmails">Copiar e-mails</button>
+      <button class="btn btn-ghost" id="mCopySubject">Copiar assunto</button>
+      <button class="btn btn-ghost" id="mCopyMessage">Copiar mensagem</button>
+      <button class="btn btn-primary" id="mCopyKit">📦 Copiar kit completo</button>
+    </div>
+    <button class="btn btn-primary" id="mSendEmail" style="width:100%; margin-top:8px; padding:12px;">✉️ Enviar e-mail agora</button>
+    <div class="hint" id="mSendHint" style="margin-top:8px; margin-bottom:0;">Abre seu cliente de e-mail padrão com CCO, assunto e mensagem preenchidos.</div>
+  </div>
+</div>
+
+<div class="crm-wrap view-pane" id="viewCrm" style="display:none">
+  <div class="crm-head">
+    <div>
+      <div class="eyebrow">Flávio Guedes · Funil de relacionamento</div>
+      <h1 style="font-size:22px;"><span class="dot"></span>CRM · 4 etapas</h1>
+      <div class="sub">Monitorando → Enviado → Reunião → Ganho. Adicione contatos pela aba Prospecção (seleção + "Adicionar ao CRM") e mova o card entre as etapas conforme a conversa avança.</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="btnClearCrmFilters">Limpar busca</button>
+  </div>
+  <div class="crm-add-box">
+    <input type="text" id="crmSearch" placeholder="Buscar no funil por nome, empresa ou e-mail...">
+  </div>
+  <div class="crm-board" id="crmBoard"></div>
+</div>
+
+<div class="modal-bg" id="crmModalBg">
+  <div class="modal">
+    <button class="close-x" id="crmModalClose">×</button>
+    <h2 id="crmModalTitle">Mensagem</h2>
+    <div class="sub" id="crmModalSub">Etapa</div>
+    <div class="field-label">Assunto</div>
+    <input type="text" id="crmSubject">
+    <div class="field-label">Mensagem</div>
+    <textarea id="crmMessage"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="crmCopySubject">Copiar assunto</button>
+      <button class="btn btn-ghost" id="crmCopyMessage">Copiar mensagem</button>
+    </div>
+    <button class="btn btn-primary" id="crmSendEmail" style="width:100%; margin-top:8px; padding:12px;">✉️ Enviar e-mail agora</button>
+    <div class="hint" style="margin-top:8px; margin-bottom:0;">Abre seu cliente de e-mail padrão com destinatário, assunto e mensagem preenchidos.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Vue app mounts here -->
+<body>
+<div class="noise"></div>
+<div id="app">
+  <div v-if="!auth.checked" class="empty-state" style="padding:40px 10px">Carregando...</div>
+  <div v-else-if="!auth.ok" class="modal-backdrop" style="display:flex">
+    <div class="modal" style="max-width:420px">
+      <h3>Acesso restrito</h3>
+      <div class="form">
+        <label>Senha</label>
+        <input type="password" v-model="auth.password" @keyup.enter="doLogin" placeholder="Senha do painel" />
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" @click="doLogin">Entrar</button>
+        </div>
+        <div v-if="auth.error" style="color:#f87171;font-size:12px;margin-top:8px">{{ auth.error }}</div>
+      </div>
+    </div>
+  </div>
+  <div v-else class="container">
+    <header style="justify-content:space-between">
+      <div class="brand">
+        <img src="https://flavio-guedes.github.io/epq-central/logo.jpg" alt="EPQ" />
+        <div>
+          <h1>CRM</h1>
+          <div class="sub">Painel comercial EPQ · <a class="playbook-link" href="https://flavio-guedes.github.io/epq/leads.html" target="_blank" rel="noopener">Abrir leads EPQ</a></div>
+        </div>
+      </div>
+      <div class="actions">
+        <span class="status-pill">{{ mode === 'cloud' ? '☁️ Online' : '💾 Offline' }}</span>
+        <span v-if="saveStatus" class="status-pill" style="border-color:rgba(52,211,153,.45);color:#a7f3d0">{{ saveStatus }}</span>
+        <button class="btn primary" @click="openCreate()">Novo lead</button>
+        <button class="btn primary" @click="saveAllToGithub()">Salvar tudo</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="kpis">
+        <div class="kpi"><div class="num">{{ kpis.total }}</div><div class="label">Total</div></div>
+        <div class="kpi"><div class="num">{{ kpis.new }}</div><div class="label">Novos</div></div>
+        <div class="kpi"><div class="num">{{ kpis.today }}</div><div class="label">Hoje</div></div>
+        <div class="kpi"><div class="num" style="color:#f87171">{{ kpis.late }}</div><div class="label">Atrasados</div></div>
+        <div class="kpi"><div class="num" style="color:#fbbf24">{{ kpis.hot }}</div><div class="label">Quentes</div></div>
+        <div class="kpi"><div class="num" style="color:#34d399">{{ kpis.converted }}</div><div class="label">Convertidos</div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="agenda">
+        <div class="agenda-col">
+          <div class="agenda-title">Atrasados</div>
+          <div class="agenda-item" v-for="lead in agenda.late" :key="lead.id" @click="openLead(lead)">
+            <div class="name">{{ lead.name }}</div>
+            <div class="meta">{{ lead.course }} · {{ formatDate(lead.nextFollowUp) }}</div>
+          </div>
+          <div v-if="!agenda.late.length" class="empty-state">Nenhum</div>
+        </div>
+        <div class="agenda-col">
+          <div class="agenda-title">Hoje</div>
+          <div class="agenda-item" v-for="lead in agenda.today" :key="lead.id" @click="openLead(lead)">
+            <div class="name">{{ lead.name }}</div>
+            <div class="meta">{{ lead.course }} · {{ formatDate(lead.nextFollowUp) }}</div>
+          </div>
+          <div v-if="!agenda.today.length" class="empty-state">Nenhum</div>
+        </div>
+        <div class="agenda-col">
+          <div class="agenda-title">Próximos</div>
+          <div class="agenda-item" v-for="lead in agenda.upcoming" :key="lead.id" @click="openLead(lead)">
+            <div class="name">{{ lead.name }}</div>
+            <div class="meta">{{ lead.course }} · {{ formatDate(lead.nextFollowUp) }}</div>
+          </div>
+          <div v-if="!agenda.upcoming.length" class="empty-state">Nenhum</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs">
+        <div class="tab" :class="{active:tab==='leads'}" @click="tab='leads'">Leads</div>
+        <div class="tab" :class="{active:tab==='funnel'}" @click="tab='funnel'">Funil</div>
+        <div class="tab" :class="{active:tab==='conversas'}" @click="tab='conversas'">Conversas/Insights</div>
+        <div class="tab" :class="{active:tab==='playbook'}" @click="tab='playbook'">Sugestões Playbook</div>
+      </div>
+
+      <div v-if="tab==='leads'">
+        <div class="toolbar" style="margin-top:12px;">
+          <input class="search" v-model="search" placeholder="Buscar por nome, WhatsApp, curso ou origem..." />
+          <select class="filter-select" v-model="filterStage">
+            <option value="">Todas as etapas</option>
+            <option v-for="s in stages" :key="s" :value="s">{{ s }}</option>
+          </select>
+        </div>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>WhatsApp</th>
+                <th>Curso/Turma</th>
+                <th>Origem</th>
+                <th>Entrada</th>
+                <th>Próximo follow-up</th>
+                <th>Temperatura</th>
+                <th>Etapa</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="lead in filtered" :key="lead.id">
+                <td><a href="#" @click.prevent="openLead(lead)" style="color:#7dd3fc;text-decoration:none;">{{ lead.name }}</a></td>
+                <td><a :href="'https://wa.me/' + lead.whatsapp" target="_blank" rel="noopener" style="color:#7dd3fc;text-decoration:none;">{{ lead.whatsapp }}</a></td>
+                <td>{{ lead.course }}</td>
+                <td>{{ lead.source }}</td>
+                <td>{{ formatDate(lead.createdAt) }}</td>
+                <td>{{ formatDate(lead.nextFollowUp) }}</td>
+                <td><span class="badge" :class="lead.temperature.toLowerCase()">{{ lead.temperature }}</span></td>
+                <td>{{ lead.stage }}</td>
+                <td>{{ lead.status }}</td>
+                <td><button class="btn" @click="openLead(lead)">Abrir</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div v-if="tab==='funnel'">
+        <div class="funnel">
+          <div class="stage" v-for="stage in stages" :key="stage">
+            <div class="name">{{ stage }}</div>
+            <div class="count">{{ byStage(stage) }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div v-if="tab==='conversas'">
+      <section class="panel">
+        <h2>Conversas WhatsApp por dia</h2>
+        <div class="sub">Leitura operacional dos arquivos exportados</div>
+        <div class="tabs" style="margin-top:12px;">
+          <div class="tab" :class="{active:conversaTab===day}" @click="conversaTab=day" v-for="day in conversaDays" :key="day">{{ day }}</div>
+        </div>
+        <div class="timeline" style="margin-top:14px;">
+          <div class="timeline-item" v-for="item in filteredConversas" :key="item.path + item.snippet">
+            <div class="timeline-meta">{{ item.name }}</div>
+            <div class="timeline-body">{{ item.snippet }}</div>
+            <div style="margin-top:6px;">
+              <a class="btn" style="font-size:11px;padding:6px 10px;" :href="item.url" target="_blank" rel="noopener">Abrir conversa original</a>
+            </div>
+          </div>
+          <div v-if="!filteredConversas.length" class="empty-state">Nenhuma conversa encontrada para este dia</div>
+        </div>
+      </section>
+    </div>
+
+    <div v-if="tab==='playbook'">
+      <section class="panel">
+        <h2>Sugestões com base no Playbook de Atendimento</h2>
+        <div class="sub">Vínculo: https://flavio-guedes.github.io/epq/playbookatendimento.html#m01</div>
+        <div class="timeline" style="margin-top:14px;">
+          <div class="timeline-item" v-for="item in playbookSuggestions" :key="item.title">
+            <div class="timeline-meta">{{ item.category }}</div>
+            <div class="timeline-body">
+              <b>{{ item.title }}</b>
+              <div style="margin-top:4px;color:var(--ink-dim);font-size:12.5px;">{{ item.note }}</div>
+            </div>
+          </div>
+          <div v-if="!playbookSuggestions.length" class="empty-state">Nenhuma sugestão no momento</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="form" style="max-width:420px;margin:0 auto;">
+        <label>Nome</label>
+        <input v-model="newLead.name" placeholder="Nome do lead" />
+        <label>WhatsApp</label>
+        <input v-model="newLead.whatsapp" placeholder="(00) 00000-0000" />
+        <label>Curso/Turma</label>
+        <input v-model="newLead.course" placeholder="Curso ou turma" />
+        <label>Origem</label>
+        <input v-model="newLead.source" placeholder="Origem do lead" />
+        <label>Estágio</label>
+        <select v-model="newLead.stage">
+          <option v-for="s in stages" :key="s" :value="s">{{ s }}</option>
+        </select>
+        <label>Temperatura</label>
+        <select v-model="newLead.temperature">
+          <option>Frio</option><option>Morno</option><option>Quente</option>
+        </select>
+        <div class="actions" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn primary" @click="createLead()">Criar lead</button>
+          <button class="btn" @click="resetForm()">Limpar</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" v-if="leadModal" @click.self="closeLead">
+    <div class="modal" v-if="currentLead">
+      <h3>{{ currentLead.name }}</h3>
+      <div class="row">
+        <div><label>Telefone</label><input v-model="currentLead.phone" /></div>
+        <div><label>E-mail</label><input v-model="currentLead.email" /></div>
+        <div><label>Curso/Turma</label><input v-model="currentLead.course" /></div>
+        <div><label>Origem</label><input v-model="currentLead.source" /></div>
+        <div><label>Estágio</label>
+          <select v-model="currentLead.stage">
+            <option v-for="s in stages" :key="s" :value="s">{{ s }}</option>
+          </select>
+        </div>
+        <div><label>Temperatura</label>
+          <select v-model="currentLead.temperature">
+            <option>Frio</option><option>Morno</option><option>Quente</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <div><label>Próximo follow-up</label><input type="date" v-model="currentLead.nextFollowUp" /></div>
+        <div><label>Hora</label><input type="time" v-model="currentLead.nextTime" /></div>
+        <div><label>Tipo de ação</label>
+          <select v-model="currentLead.nextType">
+            <option>WhatsApp</option><option>Ligação</option><option>Visita</option><option>Proposta</option><option>Follow-up</option>
+          </select>
+        </div>
+      </div>
+      <label style="margin-top:10px;display:block;">Observação</label>
+      <textarea v-model="currentLead.nextNote" placeholder="Descreva a próxima ação..."></textarea>
+      <div class="actions" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button class="btn primary" @click="saveLead()">Salvar</button>
+        <button class="btn" @click="logContact('WhatsApp')">Registrar WhatsApp</button>
+        <button class="btn" @click="logContact('Ligação')">Registrar Ligação</button>
+        <button class="btn" @click="logContact('Follow-up')">Registrar Follow-up</button>
+        <button class="btn" @click="advanceStage()">Avançar etapa</button>
+        <button class="btn" @click="closeLead">Fechar</button>
+        <select class="filter-select" v-model="msgType" style="padding:9px 10px;">
+          <option value="whatsapp">Canal: WhatsApp</option>
+          <option value="email">Canal: E-mail</option>
+        </select>
+        <select class="filter-select" v-model="msgTemplate" style="padding:9px 10px;">
+          <option value="frio">Template: Frio</option>
+          <option value="morno">Template: Morno</option>
+          <option value="quente">Template: Quente</option>
+          <option value="reativar">Template: Reativação</option>
+        </select>
+      </div>
+      <div style="margin-top:18px;">
+        <div style="font-size:12px;color:#7d9cbd;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Histórico</div>
+        <div class="timeline">
+          <div class="timeline-item" v-for="item in currentLead.history.slice().reverse()" :key="item.id">
+            <div class="timeline-meta">{{ formatDate(item.date) }} · {{ item.type }}</div>
+            <div class="timeline-body">{{ item.note }}</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:18px;">
+        <div style="font-size:12px;color:#7d9cbd;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Sugestões de mensagens</div>
+        <div class="timeline">
+          <div class="timeline-item" v-for="(msg, idx) in messageSuggestions" :key="idx">
+            <div class="timeline-meta">{{ msg.title }}</div>
+            <div class="timeline-body">{{ msg.text }}</div>
+            <div style="margin-top:6px;">
+              <a class="btn" style="font-size:11px;padding:6px 10px;" href="#" @click.prevent="copyText(msg.text)">Copiar</a>
+            </div>
+          </div>
+          <div v-if="!messageSuggestions.length" class="empty-state">Nenhuma sugestão no momento</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" v-if="createModal" @click.self="closeCreate">
+    <div class="modal">
+      <h3>Novo Lead</h3>
+      <div class="form">
+        <div class="row">
+          <div><label>Nome</label><input v-model="newLead.name" /></div>
+          <div><label>WhatsApp</label><input v-model="newLead.whatsapp" /></div>
+        </div>
+        <div class="row">
+          <div><label>Curso/Turma</label><input v-model="newLead.course" /></div>
+          <div><label>Origem</label><input v-model="newLead.source" /></div>
+        </div>
+        <div class="row">
+          <div><label>Estágio</label>
+            <select v-model="newLead.stage">
+              <option v-for="s in stages" :key="s" :value="s">{{ s }}</option>
+            </select>
+          </div>
+          <div><label>Temperatura</label>
+            <select v-model="newLead.temperature">
+              <option>Frio</option><option>Morno</option><option>Quente</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>Próximo follow-up</label><input type="date" v-model="newLead.nextFollowUp" /></div>
+          <div><label>Hora</label><input type="time" v-model="newLead.nextTime" /></div>
+        </div>
+        <label>Observação inicial</label>
+        <textarea v-model="newLead.nextNote"></textarea>
+      </div>
+      <div class="actions" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn primary" @click="createLead()">Criar</button>
+        <button class="btn" @click="closeCreate">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+<script src="
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+const { createApp, ref, computed, reactive } = Vue;
+  const API_BASE = 'https://epq-dd56.onrender.com';
+  const STORAGE_KEY = 'epq_crm_leads_v2';
+  const stages = ['01 - Respondeu','02 - Reuniao','03 - Em Proposta','04 - Negociando','05 - Ganho','06 - Perdaa'];
+  function today(){ return new Date().toISOString().slice(0,10); }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  function readLeads(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+  function writeLeads(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+  const __vueApp = createApp({
+    setup(){
+      const leads = ref(readLeads());
+      const search = ref('');
+      const filterStage = ref('');
+      const tab = ref('leads');
+      const leadModal = ref(false);
+      const createModal = ref(false);
+      const currentLead = ref(null);
+      const newLead = reactive({ name: '', whatsapp: '', course: '', source: '', stage: '01 - Respondeu', temperature: 'Morno', nextFollowUp: today(), nextTime: '09:00', nextType: 'WhatsApp', nextNote: '' });
+      const mode = ref('cloud');
+      const syncStatus = ref('');
+      const errorMsg = ref('');
+      const conversaTab = ref('Todos');
+      const conversaDays = ref([]);
+      const conversaItems = ref([]);
+      const playbookSuggestions = ref([]);
+      const auth = reactive({ checked: false, ok: false, password: '', error: '' });
+      const saveStatus = ref('');
+      const msgType = ref('whatsapp');
+      const msgTemplate = ref('frio');
+      const AUTH_HASH = 'dde324fd8848e432a49fd68f008d54af58667b1068d07c7fac235d4a02c34526';
+      const AUTH_KEY = 'epq_crm_auth_v1';
+      async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      async function checkAuth(){
+        try {
+          const saved = localStorage.getItem(AUTH_KEY);
+          auth.ok = saved === AUTH_HASH;
+        } catch {
+          auth.ok = false;
+        }
+        auth.checked = true;
+      }
+      async function doLogin(){
+        auth.error = '';
+        const digest = await sha256(auth.password || '');
+        if (digest === AUTH_HASH) {
+          auth.ok = true;
+          localStorage.setItem(AUTH_KEY, digest);
+          auth.password = '';
+        } else {
+          auth.error = 'Senha inválida';
+        }
+      }
+      function lock(){
+        auth.ok = false;
+        localStorage.removeItem(AUTH_KEY);
+        auth.password = '';
+        auth.error = '';
+      }
+      await checkAuth();
+
+      function persist(){ writeLeads(leads.value); }
+      window.__persistLeads = persist;
+      function setMode(next){ mode.value = next; localStorage.setItem('epq_crm_mode', next); }
+      async function safeApi(path, options){
+        const url = API_BASE + path;
+        const res = await fetch(url, { ...options, headers: { 'content-type':'application/json', ...(options && options.headers ? options.headers : {}) } });
+        if (!res.ok){ const text = await res.text(); throw new Error(text || ('HTTP ' + res.status)); }
+        const ct = res.headers.get('content-type') || '';
+        return ct.includes('application/json') ? res.json() : res.text();
+      }
+      async function loadCloud(){
+        errorMsg.value = '';
+        try {
+          const data = await safeApi('/leads');
+          leads.value = Array.isArray(data) ? data.map(fromApi) : [];
+          persist();
+          syncStatus.value = 'Sincronizado em ' + new Date().toLocaleTimeString();
+          setMode('cloud');
+        } catch (e) {
+          errorMsg.value = 'Não foi possível sincronizar com o servidor.';
+          setMode('offline');
+        }
+      }
+      async function saveToGithub(filename, content){
+        const branch = 'main';
+        const path = filename;
+        let sha = null;
+        try {
+          const metaUrl = 'https://api.github.com/repos/flavio-guedes/prospeccao-crm-privado/contents/' + encodeURIComponent(path) + '?ref=' + branch;
+          const metaRes = await fetch(metaUrl, { headers: { Accept: 'application/vnd.github+json', Authorization: 'Bearer gho_pv9rwF6NqLlIPG4uNaVxV23rCVXV75' } });
+          if (metaRes.ok) {
+            const meta = await metaRes.json();
+            sha = meta.sha || null;
+          }
+        } catch {
+          sha = null;
+        }
+        const body = { message: 'feat: atualiza ' + filename + ' automaticamente', content: btoa(unescape(encodeURIComponent(content))), branch };
+        if (sha) body.sha = sha;
+        const res = await fetch('https://api.github.com/repos/flavio-guedes/prospeccao-crm-privado/contents/' + encodeURIComponent(path), { method: 'PUT', headers: { 'content-type':'application/json', Accept: 'application/vnd.github+json', Authorization: 'Bearer gho_pv9rwF6NqLlIPG4uNaVxV23rCVXV75' }, body: JSON.stringify(body) });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || ('HTTP ' + res.status));
+        }
+        const data = await res.json();
+        return (data.content && data.content.html_url) || (data.commit && data.commit.html_url) || 'https://github.com/flavio-guedes/prospeccao-crm-privado';
+      }
+      async function saveAllToGithub(){
+        saveStatus.value = 'Salvando...';
+        try {
+          await saveToGithub('leads.json', JSON.stringify(leads.value, null, 2));
+          const snapshot = {
+            epq_crm_mode: localStorage.getItem('epq_crm_mode'),
+            epq_crm_auth_v1: localStorage.getItem('epq_crm_auth_v1'),
+            epq_crm_leads_v2: localStorage.getItem('epq_crm_leads_v2'),
+            crm_kanban_v1: localStorage.getItem('crm_kanban_v1'),
+            crm_messages_v1: localStorage.getItem('crm_messages_v1'),
+          };
+          await saveToGithub('crm-state.json', JSON.stringify(snapshot, null, 2));
+          saveStatus.value = 'Tudo salvo';
+        } catch (e) {
+          saveStatus.value = 'Erro ao salvar tudo';
+          setTimeout(() => { if (saveStatus.value === 'Erro ao salvar tudo') saveStatus.value = ''; }, 2500);
+          return;
+        }
+        setTimeout(() => { if (saveStatus.value === 'Tudo salvo') saveStatus.value = ''; }, 2500);
+      }
+      function blobJson(){
+        return JSON.stringify(leads.value, null, 2);
+      }
+      function msgPortfolio(lead){
+        const src = ((lead.source || '') + ' ' + (lead.course || '')).toLowerCase();
+        const stage = (lead.stage || '').toLowerCase();
+        const name = lead.name || '';
+        if (/design|conteúdo|conteudo|mkt|marketing|brand|arte|social|criativo|head/.test(src)) return { title: 'Design Head e Conteúdo', url: 'https://flavio-guedes.github.io/portfolio/designhead.html' };
+        if (/produto|ux|ui|product|pm|gestão|gestao|lançamento|lancamento/.test(src)) return { title: 'Produto', url: 'https://flavio-guedes.github.io/portfolio/produto.html' };
+        if (/estrat|growth|ia|agente|automa|dados|diretor|founder|head|coordenador|comercial/.test(src)) return { title: 'Estratégia e Growth IA agêntica', url: 'https://flavio-guedes.github.io/portfolio/parceria.html' };
+        if (/matriculado|interessado|negocia/.test(stage)) return { title: 'Produto', url: 'https://flavio-guedes.github.io/portfolio/produto.html' };
+        return { title: 'Portfolio Flavio', url: 'https://flavio-guedes.github.io/portfolio/parceria.html' };
+      }
+      function msgPersona(lead){
+        const src = ((lead.source || '') + ' ' + (lead.course || '')).toLowerCase();
+        const temp = (lead.temperature || '').toLowerCase();
+        if (/design|conteúdo|conteudo|mkt|marketing|brand|arte|social|criativo/.test(src)) return 'diretor de marketing / head de conteúdo';
+        if (/produto|ux|ui|product|pm|gestão|gestao/.test(src)) return 'head de produto / gestor';
+        if (/estrat|growth|ia|agente|automa|dados/.test(src)) return 'diretor / head de growth';
+        if (temp === 'quente') return 'decisor interessado';
+        return 'lead comercial';
+      }
+      function messageSuggestions(){
+        if (!currentLead.value) return [];
+        const lead = currentLead.value;
+        const name = lead.name ? lead.name.split(' ')[0] : '';
+        const persona = msgPersona(lead);
+        const port = msgPortfolio(lead);
+        const temp = (lead.temperature || '').toLowerCase();
+        const stage = (lead.stage || '').toLowerCase();
+        const tipo = (msgType.value || 'whatsapp').toLowerCase();
+        const canal = tipo === 'email' ? 'E-mail' : 'WhatsApp';
+        const saudacao = tipo === 'email' ? 'Olá' : 'Olá';
+        const despedida = tipo === 'email' ? 'Abs,' : 'Qualquer coisa me avisa!';
+        const assinatura = tipo === 'email' ? 'Flávio Guedes — ' + port.title + '\n' + port.url : 'Flávio Guedes\n' + port.url;
+        const chamada = tipo === 'email' ? 'abre o link abaixo' : 'dá uma olhada no link';
+        const follow = tipo === 'email' ? 'se quiser, monto um resumo por e-mail' : 'se quiser, te envio um resumo';
+        let text = '';
+        if (msgTemplate.value === 'frio'){
+          text = saudacao + ', tudo bem?\n\nVi seu contexto de ' + lead.course + ' e acredito que essa conversa pode ser útil para você, sem abertura comercial agressiva.\n\nAqui tem um material alinhado ao seu perfil: ' + chamada + ' para conhecer como trabalho como ' + port.title + '.\n' + port.url + '\n\nSe fizer sentido para o seu momento, seguimos por aqui. ' + follow + '.';
+        } else if (msgTemplate.value === 'quente'){
+          text = saudacao + ', tudo bem?\n\nPelos sinais que você já deu, faz sentido avançar para um passo pequeno: definir um objetivo curto e um formato simples de resultado.\n\nEste portfolio pode ajudar a alinhar expectativas: ' + chamada + ' — ' + port.title + '.\n' + port.url + '\n\nSe for útil, podemos tratar como um próximo passo concreto, sem enrolação.';
+        } else if (msgTemplate.value === 'reativar'){
+          text = saudacao + ', tudo bem?\n\nSei que a agenda do ' + persona + ' costuma ser corrida, então já deixei o material direto ao ponto.\n\nVeja aqui: ' + port.url + '\n\nSe quiser, responda com 1 melhor horário para um contato rápido. ' + follow + '.';
+        } else {
+          text = saudacao + ', tudo bem?\n\nVi seu contexto de ' + lead.course + ' e acho que vale uma troca objetiva, sem pressão.\n\nAqui tem um material alinhado ao seu momento: ' + chamada + ' — ' + port.title + '.\n' + port.url + '\n\nSe fizer sentido, eu continuo por aqui. ' + follow + '.';
+        }
+        return [
+          { title: canal + ' · ' + (msgTemplate.value === 'frio' ? 'Primeiro toque' : msgTemplate.value === 'quente' ? 'Avanço rápido' : 'Reativação direta'), text },
+          { title: 'Sugestão · Follow-up', text: saudacao + ', só passando para confirmar: o link chegou bem? ' + port.url + ' Se fizer sentido para ' + lead.course + ', seguimos com um próximo passo simples.' },
+          { title: 'Sugestão · Proposta', text: saudacao + ', podemos estruturar um próximo passo simples em ' + lead.course + ':\n1) objetivo curto\n2) resultado prático\n3) formato e prazo\n\nReferência: ' + port.url + '\n\nSe quiser, te envio um resumo curto para aprovação.' }
+        ];
+      }
+      async function copyText(text){
+        try {
+          if (navigator && navigator.clipboard) await navigator.clipboard.writeText(text);
+        } catch {}
+      }
+      function fromApi(l){
+        return {
+          id: l.id || uid(),
+          name: l.nome || l.name || '',
+          phone: l.telefone || l.phone || '',
+          email: l.email || '',
+          whatsapp: l.whatsapp || '',
+          course: l.produto || l.course || '',
+          source: l.origem || l.source || '',
+          createdAt: (l.created_at || l.createdAt || '').slice(0,10),
+          lastContact: (l.updated_at || l.updatedAt || '').slice(0,10),
+          nextFollowUp: (l.proximo_followup || l.nextFollowUp || '').slice(0,10),
+          nextTime: l.nextTime || '09:00',
+          nextType: l.proximo_tipo || l.nextType || '',
+          nextNote: l.proximo_nota || l.nextNote || '',
+          temperature: l.temperatura || l.temperature || '',
+          stage: l.etapa || l.stage || '',
+          status: l.status || 'ativo',
+          ownerId: l.responsavel_id || l.ownerId || 'local',
+          ownerName: l.responsavel_id || l.ownerId || 'local',
+          history: Array.isArray(l.history) ? l.history : [],
+        };
+      }
+      function toApiPayload(lead){
+        return {
+          nome: lead.name,
+          telefone: lead.phone,
+          email: lead.email,
+          whatsapp: lead.whatsapp,
+          produto: lead.course,
+          origem: lead.source,
+          etapa: lead.stage,
+          temperatura: lead.temperature,
+          proximo_followup: lead.nextFollowUp || null,
+          proximo_tipo: lead.nextType || null,
+          proximo_nota: lead.nextNote || null,
+          status: lead.status,
+        };
+      }
+      function toLocalPayload(form){
+        return {
+          id: uid(),
+          name: form.name,
+          phone: form.phone || '',
+          email: form.email || '',
+          whatsapp: form.whatsapp,
+          course: form.course,
+          source: form.source,
+          createdAt: today(),
+          lastContact: today(),
+          nextFollowUp: form.nextFollowUp,
+          nextTime: form.nextTime,
+          nextType: form.nextType,
+          nextNote: form.nextNote,
+          temperature: form.temperature,
+          stage: form.stage,
+          status: 'ativo',
+          ownerId: 'local',
+          ownerName: 'local',
+          history: [],
+        };
+      }
+
+      const filtered = computed(()=>{
+        const q = search.value.trim().toLowerCase();
+        return leads.value.filter(l=>{
+          if (filterStage.value && l.stage !== filterStage.value) return false;
+          if (!q) return true;
+          return [l.name, l.whatsapp, l.course, l.source].join(' ').toLowerCase().includes(q);
+        });
+      });
+      const kpis = computed(()=>{
+        const list = leads.value;
+        const now = today();
+        return {
+          total: list.length,
+          new: list.filter(l=>l.stage==='01 - Respondeu').length,
+          today: list.filter(l=>l.nextFollowUp===now && l.status==='ativo').length,
+          late: list.filter(l=>l.nextFollowUp && l.nextFollowUp<now && l.status==='ativo').length,
+          hot: list.filter(l=>l.temperature==='Quente').length,
+          converted: list.filter(l=>l.stage==='Matriculado').length,
+        };
+      });
+      const agenda = computed(()=>{
+        const active = leads.value.filter(l=>l.status !== 'arquivado');
+        const now = today();
+        return {
+          late: active.filter(l=>l.nextFollowUp && l.nextFollowUp<now).sort((a,b)=>a.nextFollowUp.localeCompare(b.nextFollowUp)),
+          today: active.filter(l=>l.nextFollowUp===now).sort((a,b)=> (a.nextTime||'').localeCompare(b.nextTime||'')),
+          upcoming: active.filter(l=>l.nextFollowUp && l.nextFollowUp>now).sort((a,b)=>a.nextFollowUp.localeCompare(b.nextFollowUp)),
+        };
+      });
+
+      function byStage(stage){ return leads.value.filter(l=>l.stage===stage).length; }
+      function formatDate(v){ return v || '—'; }
+      function formatDateTime(v){ return v ? v.replace('T',' ').slice(0,19) : '—'; }
+
+      async function openLead(lead){
+        const full = fromApi(lead);
+        currentLead.value = full;
+        leadModal.value = true;
+      }
+      function closeLead(){ leadModal.value = false; currentLead.value = null; }
+      async function saveLead(){
+        if (!currentLead.value) return;
+        const payload = toApiPayload(currentLead.value);
+        try {
+          if (mode.value === 'cloud') await safeApi('/leads/' + currentLead.value.id, { method:'PUT', body: JSON.stringify(payload) });
+          const idx = leads.value.findIndex(x => x.id === currentLead.value.id);
+          const merged = { ...currentLead.value, ...payload, lastContact: today() };
+          if (idx >= 0) leads.value[idx] = merged; else leads.value.unshift(merged);
+          currentLead.value = merged;
+          persist();
+          saveStatus.value = 'Salvo';
+        } catch { errorMsg.value = 'Falha ao salvar no modo online.'; }
+        saveStatus.value = 'Salvo offline';
+        setTimeout(() => { if (saveStatus.value === 'Salvo offline') saveStatus.value = ''; }, 2500);
+        closeLead();
+      }
+
+      function openCreate(){ createModal.value = true; }
+      function closeCreate(){ createModal.value = false; resetForm(); }
+      function resetForm(){ Object.assign(newLead, { name:'', whatsapp:'', course:'', source:'', stage:'01 - Respondeu', temperature:'Morno', nextFollowUp:today(), nextTime:'09:00', nextType:'WhatsApp', nextNote:'' }); }
+      async function createLead(){
+        const payload = toLocalPayload(newLead);
+        try {
+          if (mode.value === 'cloud'){
+            const created = await safeApi('/leads', { method:'POST', body: JSON.stringify(toApiPayload(payload)) });
+            leads.value.unshift(fromApi(created));
+          } else {
+            leads.value.unshift(payload);
+          }
+          persist();
+        } catch { errorMsg.value = 'Falha ao criar no modo online. Usando armazenamento local.'; leads.value.unshift(payload); persist(); }
+        resetForm();
+        closeCreate();
+        saveStatus.value = 'Criado';
+        setTimeout(() => { if (saveStatus.value === 'Criado') saveStatus.value = ''; }, 2500);
+      }
+
+      async function logContact(type){
+        if (!currentLead.value) return;
+        currentLead.value.history = currentLead.value.history || [];
+        currentLead.value.history.push({ id: uid(), date: today(), type, note: type + ' registrado' });
+        currentLead.value.lastContact = today();
+        persist();
+      }
+      async function advanceStage(){
+        if (!currentLead.value) return;
+        const idx = stages.indexOf(currentLead.value.stage);
+        if (idx < stages.length - 1){ currentLead.value.stage = stages[idx + 1]; await saveLead(); }
+      }
+      async function syncNow(){ await loadCloud(); }
+      function switchToOffline(){ setMode('offline'); syncStatus.value = ''; }
+
+      function exportXLS(){
+        const ws = XLSX.utils.json_to_sheet(leads.value.map(l => ({
+          Nome: l.name,
+          WhatsApp: l.whatsapp,
+          Telefone: l.phone,
+          Email: l.email,
+          Curso: l.course,
+          Origem: l.source,
+          Entrada: l.createdAt,
+          'Próximo follow-up': l.nextFollowUp,
+          Hora: l.nextTime,
+          Temperatura: l.temperature,
+          Etapa: l.stage,
+          Status: l.status,
+          Observação: l.nextNote,
+        })));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+        XLSX.writeFile(wb, 'leads.xlsx');
+      }
+
+      async function init(){
+        if (!auth.ok) return;
+        await loadCloud();
+        await loadConversas();
+        loadPlaybookSuggestions();
+        try {
+          const raw = JSON.stringify(leads.value, null, 2);
+          await saveToGithub('leads.json', raw);
+        } catch (e) {
+          errorMsg.value = 'Falha ao salvar inicial no GitHub: ' + (e && e.message ? e.message : 'erro');
+        }
+      }
+      init();
+
+      async function loadConversas(){
+        try {
+          const res = await fetch('conversas.json');
+          if (!res.ok) throw new Error('missing');
+          const data = await res.json();
+          conversaDays.value = data.days || [];
+          conversaItems.value = data.items || [];
+        } catch (e) {
+          conversaDays.value = [];
+          conversaItems.value = [];
+        }
+      }
+      function loadPlaybookSuggestions(){
+        playbookSuggestions.value = [
+          {
+            title: 'Aula experimental com data específica',
+            category: 'Agendamento',
+            note: 'Quando o lead demonstrar interesse real, sugira horário e data fechados: "Temos amanhã às 19h, quer reservar?". Aproveite quando ele já aceitar e reforce o envio de local/confirmação.',
+          },
+          {
+            title: 'Retomada rápida de atendimento',
+            category: 'Tempo de resposta',
+            note: 'Leads com gaps longos devem ser reabertos com mensagem curta e direta: "Douglas, seguimos com a vaga na turma da noite?". Evite genéricos e lembre o contexto da conversa anterior.',
+          },
+          {
+            title: 'Venda pelo fechamento, não pelo pitch',
+            category: 'Objeção de preço',
+            note: 'Não repita valores sem confirmar disponibilidade e horário. Primeiro ancore benefício/aula experimental, depois apresente investimento. Se houver objeção, devolva com parcelamento + taxa de material + camisa, sem desconto sem regra.',
+          },
+          {
+            title: 'Confirmação pré-aula',
+            category: 'Pós-agendamento',
+            note: 'Após agendar, envie lembretes curtos e peça confirmação. Se o lead não responder 24h antes, reative com uma pergunta simples e um botão de confirmação.',
+          },
+        ];
+      }
+      const filteredConversas = computed(()=>{
+        const day = conversaTab.value;
+        if (!day || day === 'Todos') return conversaItems.value;
+        return conversaItems.value.filter((item)=> item.day === day);
+      });
+
+      return {
+        auth, doLogin, lock,
+        mode, syncStatus, errorMsg, saveStatus,
+        search, filterStage, tab, leadModal, createModal, currentLead, newLead, stages, filtered, kpis, agenda, byStage,
+        openLead, closeLead, saveLead, openCreate, closeCreate, createLead, logContact, advanceStage, formatDate, formatDateTime, exportXLS, syncNow, switchToOffline, saveToGithub, saveAllToGithub,
+        conversaTab, conversaDays, conversaItems, filteredConversas, playbookSuggestions, messageSuggestions, msgType, msgTemplate, copyText,
+      };
+    }
+  }).mount('#app');
+window.__vueApp = __vueApp;
+</script>
+
+<!-- CRM Kanban JS -->
+<script>
+const CRM_STAGES = ["00 - Enviado","01 - Respondeu","02 - Reuniao","03 - Em Proposta","04 - Negociando","05 - Ganho","06 - Perdaa"];
+const LS_CRM_KANBAN = "crm_kanban_v1";
+const LS_CRM_MESSAGES = "crm_messages_v1";
+
+let crmMap = {};
+let crmMessages = {};
+let crmSearchTerm = "";
+
+try { crmMap = JSON.parse(localStorage.getItem(LS_CRM_KANBAN) || "{}"); } catch(e) { crmMap = {}; }
+try { crmMessages = JSON.parse(localStorage.getItem(LS_CRM_MESSAGES) || "{}"); } catch(e) { crmMessages = {}; }
+
+function getLeads(){
+  try {
+    const raw = localStorage.getItem('epq_crm_leads_v2');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveCrmMap(){
+  localStorage.setItem(LS_CRM_KANBAN, JSON.stringify(crmMap));
+}
+
+function saveCrmMessages(){
+  localStorage.setItem(LS_CRM_MESSAGES, JSON.stringify(crmMessages));
+}
+
+function crmEntries(){
+  const leads = getLeads();
+  return Object.keys(crmMap).map(email => {
+    const lead = leads.find(l => l.email === email);
+    if(!lead) return null;
+    return { email, stage: crmMap[email], lead };
+  }).filter(Boolean);
+}
+
+function renderCrmBoard(){
+  const board = document.getElementById('crmBoard');
+  const entries = crmEntries();
+  const term = crmSearchTerm.toLowerCase();
+  const filtered = term ? entries.filter(e => {
+    const c = e.lead;
+    const hay = `${c.name || ''} ${c.empresa || ''} ${c.email || ''} ${c.whatsapp || ''}`.toLowerCase();
+    return hay.includes(term);
+  }) : entries;
+
+  board.innerHTML = CRM_STAGES.map(stage => {
+    const list = filtered.filter(e => e.stage === stage);
+    const isEnviado = stage === "00 - Enviado";
+    return `
+      <div class="crm-col" data-stage="${stage}">
+        <div class="crm-col-head">
+          <div class="crm-col-title"><span class="crm-dot"></span>${stage}</div>
+          <div class="crm-col-count">${list.length}</div>
+        </div>
+        ${list.length ? list.map(e => renderCrmCard(e, isEnviado)).join('') : '<div class="crm-empty">Nenhum contato aqui.</div>'}
+      </div>`;
+  }).join('');
+
+  // Attach event listeners
+  board.querySelectorAll('[data-act]').forEach(btn => {
+    btn.onclick = () => {
+      const email = btn.dataset.email;
+      const act = btn.dataset.act;
+      const stage = btn.dataset.stage;
+      if(act === 'prev') crmMoveStage(email, -1);
+      else if(act === 'next') crmMoveStage(email, 1);
+      else if(act === 'remove') crmRemove(email);
+      else if(act === 'msg') crmOpenModal(email, stage);
+    };
+  });
+
+  // Tier/Subtier selects in Enviado column
+  board.querySelectorAll('.crm-tier-sel').forEach(sel => {
+    sel.onchange = () => {
+      const email = sel.dataset.email;
+      const field = sel.dataset.field;
+      const value = sel.value;
+      updateLeadFromCrm(email, field, value);
+    };
+  });
+}
+
+function renderCrmCard(entry, isEnviado){
+  const c = entry.lead;
+  const email = entry.email;
+  const stage = entry.stage;
+  const idx = CRM_STAGES.indexOf(stage);
+  const msgKey = `${email}:${stage}`;
+  const savedMsg = crmMessages[msgKey];
+  const tierOptions = ["01 - Vaga_Contratacao","02 - Indicacao","03 - Recrutamento","04 - Networking","05 - Gestao_Marketing","06 - Parceria_Projeto","07 - Comercial","08 - Baixa_Relevancia"];
+  const subtipoOptions = ["Diretoria / Lideranca","RH / People","TI / Tech","Produto","Design / Conteudo","Marketing / Growth","Comercial / Vendas","Operacoes / Financeiro","Juridico / Compliance","Outros"];
+
+  return `
+    <div class="crm-card">
+      <div class="n">${esc(c.name || c.nome || '')}</div>
+      <div class="e">${c.cargo || ''}${c.empresa ? ` · ${c.empresa}` : ''}</div>
+      <div class="em">${c.email || ''}</div>
+      ${isEnviado ? `
+        <div class="crm-selects">
+          <select class="crm-tier-sel" data-email="${email}" data-field="listaV2">
+            <option value="">Tier</option>
+            ${tierOptions.map(t => `<option value="${t}" ${(c.listaV2 || '') === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+          <select class="crm-tier-sel" data-email="${email}" data-field="subtipo">
+            <option value="">Subtipo</option>
+            ${subtipoOptions.map(s => `<option value="${s}" ${(c.subtipo || '') === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        ${savedMsg ? '<div class="crm-tag" style="margin-top:6px;">✨ Mensagem salva</div>' : ''}
+      ` : `
+        <div class="tags">
+          <span class="crm-tag">${c.listaV2 || ''}</span>
+          ${c.subtipo ? `<span class="crm-tag">${c.subtipo}</span>` : ''}
+        </div>
+      `}
+      <div class="crm-card-actions">
+        <button class="crm-mini-btn" data-act="prev" data-email="${email}" ${idx<=0?'disabled':''}>◀</button>
+        <button class="crm-mini-btn" data-act="next" data-email="${email}" ${idx>=CRM_STAGES.length-1?'disabled':''}>▶</button>
+        <button class="crm-mini-btn primary" data-act="msg" data-email="${email}" data-stage="${stage}">✉ Mensagem</button>
+        <button class="crm-mini-btn" data-act="remove" data-email="${email}">✕</button>
+      </div>
+    </div>`;
+}
+
+function esc(s){
+  if(!s) return '';
+  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function crmMoveStage(email, dir){
+  const entry = crmMap[email];
+  if(!entry) return;
+  const idx = CRM_STAGES.indexOf(entry);
+  const next = idx + dir;
+  if(next < 0 || next >= CRM_STAGES.length) return;
+  crmMap[email] = CRM_STAGES[next];
+  saveCrmMap();
+  renderCrmBoard();
+}
+
+function crmRemove(email){
+  delete crmMap[email];
+  saveCrmMap();
+  renderCrmBoard();
+}
+
+function updateLeadFromCrm(email, field, value){
+  // Update lead in Vue app's leads array
+  try {
+    const app = window.__vueApp;
+    if(app && app.leads) {
+      const lead = app.leads.value.find(l => l.email === email);
+      if(lead) {
+        lead[field] = value;
+        if(window.__persistLeads) window.__persistLeads();
+      }
+    }
+  } catch(e) { console.error('Error updating lead from CRM:', e); }
+  // Also update local CONTACTS-like array for CRM display
+  // Since CRM reads from localStorage, persistLeads() handles it
+}
+
+let crmModalCtx = null;
+function crmOpenModal(email, stage){
+  const c = getLeads().find(l => l.email === email);
+  if(!c) return;
+  crmModalCtx = { email, stage };
+  const name = c.name || c.nome || email;
+  const empresa = c.empresa || 'sem empresa';
+  document.getElementById('crmModalTitle').textContent = `Mensagem · ${name}`;
+  document.getElementById('crmModalSub').textContent = `${stage} · ${empresa}`;
+  
+  const msgKey = `${email}:${stage}`;
+  const saved = crmMessages[msgKey];
+  document.getElementById('crmSubject').value = saved ? saved.subject : '';
+  document.getElementById('crmMessage').value = saved ? saved.message : '';
+  
+  document.getElementById('crmModalBg').classList.add('open');
+}
+
+document.getElementById('crmModalClose').onclick = () => document.getElementById('crmModalBg').classList.remove('open');
+document.getElementById('crmModalBg').onclick = (e) => { if(e.target.id === 'crmModalBg') document.getElementById('crmModalBg').classList.remove('open'); };
+
+document.getElementById('crmCopySubject').onclick = () => {
+  copyText(document.getElementById('crmSubject').value, 'Assunto copiado.');
+};
+document.getElementById('crmCopyMessage').onclick = () => {
+  copyText(document.getElementById('crmMessage').value, 'Mensagem copiada.');
+};
+
+document.getElementById('crmSaveMessage').onclick = () => {
+  if(!crmModalCtx) return;
+  const subject = document.getElementById('crmSubject').value;
+  const message = document.getElementById('crmMessage').value;
+  const msgKey = `${crmModalCtx.email}:${crmModalCtx.stage}`;
+  crmMessages[msgKey] = { subject, message };
+  saveCrmMessages();
+  showToast('Mensagem salva.');
+  renderCrmBoard();
+};
+
+document.getElementById('crmSendEmail').onclick = () => {
+  if(!crmModalCtx) return;
+  const subj = document.getElementById('crmSubject').value;
+  const msg = document.getElementById('crmMessage').value;
+  const url = `mailto:${encodeURIComponent(crmModalCtx.email)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(msg)}`;
+  showToast('Abrindo seu cliente de e-mail...');
+  window.location.href = url;
+};
+
+document.getElementById('crmSearch').oninput = (e) => {
+  crmSearchTerm = e.target.value;
+  renderCrmBoard();
+};
+
+document.getElementById('btnClearCrmFilters').onclick = () => {
+  crmSearchTerm = '';
+  document.getElementById('crmSearch').value = '';
+  renderCrmBoard();
+};
+
+function copyText(text, msg){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  navigator.clipboard && navigator.clipboard.writeText(text).catch(()=>{});
+  document.body.removeChild(ta);
+  showToast(msg || 'Copiado!');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(t){ t.textContent = msg; t.classList.add('show'); clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2200); }
+}
+
+// Init
+renderCrmBoard();
+</script>
+
+<script>
+// ===== Tab switching =====
+function switchTab(tab){
+  const isCrm = tab === 'crm';
+  document.getElementById('viewProspeccao').style.display = isCrm ? 'none' : 'block';
+  document.getElementById('viewCrm').style.display = isCrm ? 'block' : 'none';
+  document.getElementById('tabBtnProspeccao').classList.toggle('active', !isCrm);
+  document.getElementById('tabBtnCrm').classList.toggle('active', isCrm);
+  if(isCrm) renderCrmBoard();
+}
+
+document.getElementById('tabBtnProspeccao').onclick = () => switchTab('prospeccao');
+document.getElementById('tabBtnCrm').onclick = () => switchTab('crm');
+</script>
+</body>
+</html>
