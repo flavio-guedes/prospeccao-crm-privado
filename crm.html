@@ -559,8 +559,15 @@
         }
         setTimeout(() => { if (saveStatus.value === 'Tudo salvo') saveStatus.value = ''; }, 2500);
       }
-      function blobJson(){
-        return JSON.stringify(leads.value, null, 2);
+
+        const src = ((lead.source || '') + ' ' + (lead.course || '')).toLowerCase();
+        const stage = (lead.stage || '').toLowerCase();
+        const name = lead.name || '';
+        if (/design|conteúdo|conteudo|mkt|marketing|brand|arte|social|criativo|head/.test(src)) return { title: 'Design Head e Conteúdo', url: 'https://flavio-guedes.github.io/portfolio/designhead.html' };
+        if (/produto|ux|ui|product|pm|gestão|gestao|lançamento|lancamento/.test(src)) return { title: 'Produto', url: 'https://flavio-guedes.github.io/portfolio/produto.html' };
+        if (/estrat|growth|ia|agente|automa|dados|diretor|founder|head|coordenador|comercial/.test(src)) return { title: 'Estratégia e Growth IA agêntica', url: 'https://flavio-guedes.github.io/portfolio/parceria.html' };
+        if (/matriculado|interessado|negocia/.test(stage)) return { title: 'Produto', url: 'https://flavio-guedes.github.io/portfolio/produto.html' };
+        return { title: 'Portfolio Flavio', url: 'https://flavio-guedes.github.io/portfolio/parceria.html' };
       }
       function msgPortfolio(lead){
         const src = ((lead.source || '') + ' ' + (lead.course || '')).toLowerCase();
