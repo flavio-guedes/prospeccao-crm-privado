@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prospecção · Disparos</title>
+<style>
+:root{
+  --bg:#0a0b0f; --bg2:#111319; --panel:#15171f; --panel2:#1b1e28;
+  --border:#262a36; --border-soft:#1e212b;
+  --text:#e8e9ee; --text-dim:#9599a8; --text-faint:#5c6070;
+  --accent:#6d5bff; --accent2:#4f9dff; --accent-glow:rgba(109,91,255,.25);
+  --ok:#33c17a; --warn:#e8b339; --danger:#e8546b; --info:#4f9dff;
+  --radius:14px; --radius-sm:9px;
+  --font: -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  font-family:var(--font); background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(109,91,255,.10), transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, rgba(79,157,255,.08), transparent 55%),
+    var(--bg);
+  color:var(--text); min-height:100vh;
+}
+.wrap{max-width:1320px; margin:0 auto; padding:22px 18px 40px;}
+header.top{display:flex; flex-direction:column; gap:4px; margin-bottom:22px;}
+.eyebrow{font-size:11px; letter-spacing:2.5px; color:var(--accent2); font-weight:700; text-transform:uppercase;}
+h1{font-size:26px; font-weight:800; letter-spacing:-.5px; display:flex; align-items:center; gap:10px;}
+h1 .dot{width:9px;height:9px;border-radius:50%; background:var(--ok); box-shadow:0 0 12px var(--ok);}
+.subtitle{color:var(--text-dim); font-size:13.5px; margin-top:2px;}
+.cards-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:20px 0 18px;}
+.stat-card{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px;}
+.stat-card .val{font-size:22px; font-weight:800; letter-spacing:-.5px;}
+.stat-card .lbl{font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-top:3px; font-weight:600;}
+.btn{border:none; cursor:pointer; font-family:inherit; font-weight:600; border-radius:9px; transition:.15s; white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; padding:10px 16px; font-size:13px; box-shadow:0 4px 16px var(--accent-glow);}
+.btn-primary:hover{filter:brightness(1.12); transform:translateY(-1px);}
+.btn-ghost{background:var(--panel2); color:var(--text); border:1px solid var(--border); padding:9px 14px; font-size:12.5px;}
+.btn-ghost:hover{background:#20232e; border-color:#333748;}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+.toolbar{display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin-bottom:14px;}
+.search-box{flex:1; min-width:220px; position:relative;}
+.search-box input{width:100%; background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:10px 14px 10px 34px; color:var(--text); font-size:13px; font-family:inherit;}
+.search-box input:focus{outline:none; border-color:var(--accent);}
+.search-box::before{content:"⌕"; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-faint); font-size:15px;}
+select.filter{background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:9px; padding:9px 10px; font-size:12.5px; font-family:inherit;}
+.chip-row{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;}
+.chip{background:var(--panel); border:1px solid var(--border); color:var(--text-dim); padding:7px 12px; border-radius:20px; font-size:12px; cursor:pointer; font-weight:600;}
+.chip:hover{color:var(--text); border-color:#3a3f52;}
+.chip.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+.chip .n{opacity:.7; font-weight:400; margin-left:4px;}
+.list-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; color:var(--text-dim); font-size:12px;}
+.contact{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm); padding:13px 14px; margin-bottom:8px; display:grid; grid-template-columns:24px 1fr auto; gap:12px; align-items:start; transition:.12s;}
+.contact:hover{border-color:#333748;}
+.contact.sel{border-color:var(--accent); background:linear-gradient(180deg,rgba(109,91,255,.07),var(--panel));}
+.contact input[type=checkbox]{width:17px; height:17px; margin-top:2px; accent-color:var(--accent); cursor:pointer;}
+.c-main{min-width:0;}
+.c-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.c-name{font-weight:700; font-size:14px;}
+.c-empresa{font-size:12px; color:var(--text-dim);}
+.c-cargo{font-size:12px; color:var(--text-faint);}
+.c-email{font-size:12px; color:var(--accent2); margin-top:4px; word-break:break-all;}
+.badge{font-size:9.5px; padding:2px 7px; border-radius:5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;}
+.badge-tier{background:rgba(79,157,255,.14); color:var(--accent2); border:1px solid rgba(79,157,255,.3);}
+.badge-sub{background:rgba(109,91,255,.14); color:#b3a8ff; border:1px solid rgba(109,91,255,.3);}
+.badge-personalizada{background:rgba(255,196,79,.14); color:#ffd479; border:1px solid rgba(255,196,79,.35);}
+.c-side{display:flex; flex-direction:column; align-items:flex-end; gap:6px;}
+select.status-sel{background:var(--panel2); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:6px 8px; font-size:11.5px; font-family:inherit; cursor:pointer;}
+.pagination{display:flex; justify-content:center; align-items:center; gap:10px; margin:18px 0 6px; color:var(--text-dim); font-size:12.5px;}
+.action-bar{position:fixed; bottom:0; left:0; right:0; background:rgba(15,16,22,.92); backdrop-filter:blur(14px); border-top:1px solid var(--border); padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; z-index:50;}
+.action-bar .count{font-size:13px; font-weight:700;}
+.action-bar .count b{color:var(--accent2); font-size:16px;}
+.action-buttons{display:flex; gap:8px; flex-wrap:wrap;}
+.modal-bg{display:none; position:fixed; inset:0; background:rgba(5,6,10,.7); backdrop-filter:blur(3px); z-index:100; align-items:flex-start; justify-content:center; overflow-y:auto; padding:30px 14px;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg2); border:1px solid var(--border); border-radius:16px; max-width:620px; width:100%; padding:24px; margin-bottom:40px; position:relative;}
+.modal h2{font-size:18px; margin-bottom:2px;}
+.modal .sub{color:var(--text-dim); font-size:12.5px; margin-bottom:16px;}
+.modal-row{display:flex; gap:10px; margin-bottom:14px;}
+.modal-stat{flex:1; background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:10px; text-align:center;}
+.modal-stat .v{font-size:18px; font-weight:800;}
+.modal-stat .l{font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.5px;}
+.field-label{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-faint); font-weight:700; margin:14px 0 6px;}
+.modal select, .modal input[type=text]{width:100%; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 11px; font-size:13px; font-family:inherit;}
+.modal textarea{width:100%; min-height:170px; background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:11px; font-size:13px; font-family:inherit; line-height:1.5; resize:vertical;}
+.portfolio-pick{display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;}
+.portfolio-opt{flex:1; min-width:130px; border:1px solid var(--border); background:var(--panel); border-radius:9px; padding:10px; cursor:pointer; font-size:12px; text-align:center; font-weight:600; color:var(--text-dim);}
+.portfolio-opt.active{border-color:var(--accent); color:#fff; background:rgba(109,91,255,.18);}
+.modal-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:18px;}
+.modal-actions .btn{width:100%;}
+.close-x{position:absolute; top:16px; right:20px; background:none; border:none; color:var(--text-faint); font-size:22px; cursor:pointer;}
+.toast{position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ok); color:#04140b; font-weight:700; font-size:13px; padding:11px 20px; border-radius:30px; opacity:0; pointer-events:none; transition:.25s; z-index:200; box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.empty-state{text-align:center; padding:50px 20px; color:var(--text-faint);}
+.hint{font-size:11.5px; color:var(--text-faint); margin-top:-8px; margin-bottom:16px;}
+.section-title{font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-faint); font-weight:700; margin:6px 0 10px;}
+@media(max-width:760px){.cards-grid{grid-template-columns:1fr}.modal-row{flex-direction:column}.portfolio-pick{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Prospecção · Outreach</div>
+    <h1>Disparos</h1>
+    <div class="subtitle">Seleção de contatos e preparo de mensagens por abordagem e portfólio</div>
+  </header>
+
+  <section class="cards-grid">
+    <div class="stat-card"><div class="val" id="kpiContatos">0</div><div class="lbl">Contatos</div></div>
+    <div class="stat-card"><div class="val" id="kpiValidos">0</div><div class="lbl">E-mails válidos</div></div>
+    <div class="stat-card"><div class="val" id="kpiDup">0</div><div class="lbl">Duplicados na seleção</div></div>
+  </section>
+
+  <section class="toolbar">
+    <div class="search-box"><input id="searchInput" placeholder="Buscar por nome, empresa ou e-mail..."></div>
+    <select class="filter" id="statusFilter"><option value="">Todos status</option></select>
+  </section>
+  <div class="chip-row" id="chipRow"></div>
+  <div class="list-head"><span id="listCount">0 contatos</span><span id="pageInfo"></span></div>
+  <div id="contactList"></div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<div class="action-bar">
+  <div class="count"><b id="selCount">0</b> contato(s) selecionado(s)</div>
+  <div class="action-buttons">
+    <button class="btn btn-ghost btn-sm" id="btnCopyEmails">Copiar e-mails</button>
+    <button class="btn btn-ghost btn-sm" id="btnCopyCCO">Copiar p/ CCO</button>
+    <button class="btn btn-primary" id="btnPrepararDisparo">🚀 Preparar disparo</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <button class="close-x" id="modalClose">×</button>
+    <h2>Preparar disparo</h2>
+    <div class="sub" id="modalSub">Grupo selecionado</div>
+    <div class="modal-row">
+      <div class="modal-stat"><div class="v" id="mContatos">0</div><div class="l">Contatos</div></div>
+      <div class="modal-stat"><div class="v" id="mValidos">0</div><div class="l">E-mails válidos</div></div>
+      <div class="modal-stat"><div class="v" id="mDup">0</div><div class="l">Duplicados na seleção</div></div>
+    </div>
+    <div class="field-label">Assunto</div>
+    <select id="mSubjectSelect"></select>
+    <input type="text" id="mSubject" style="margin-top:8px">
+    <div class="field-label">Mensagem <span id="mMsgTag" style="text-transform:none; font-weight:600; letter-spacing:0;"></span></div>
+    <textarea id="mMessage"></textarea>
+    <div class="field-label">Portfólio recomendado</div>
+    <div class="portfolio-pick" id="portfolioPick"></div>
+    <div class="field-label">Dividir em lotes</div>
+    <div class="portfolio-pick" id="batchSizePick"></div>
+    <div class="hint">Envie um lote por vez para reduzir risco de bloqueio/spam.</div>
+    <div id="batchNavWrap" style="display:none; margin-top:6px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:8px 10px;">
+        <button class="btn btn-ghost btn-sm" id="batchPrev">← Lote anterior</button>
+        <span id="batchLabel" style="font-size:12px; color:var(--text); font-weight:600;"></span>
+        <button class="btn btn-ghost btn-sm" id="batchNext">Próximo lote →</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="mCopyEmails">Copiar e-mails</button>
+      <button class="btn btn-ghost" id="mCopySubject">Copiar assunto</button>
+      <button class="btn btn-ghost" id="mCopyMessage">Copiar mensagem</button>
+      <button class="btn btn-primary" id="mCopyKit">📦 Copiar kit completo</button>
+    </div>
+    <button class="btn btn-primary" id="mSendEmail" style="width:100%; margin-top:8px; padding:12px;">✉️ Enviar e-mail agora</button>
+    <div class="hint" id="mSendHint" style="margin-top:8px; margin-bottom:0;">Abre seu cliente de e-mail padrão com CCO, assunto e mensagem preenchidos.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CONTACTS = [
+  {nome:'Luis', empresa:'Museu a Céu Aberto - Cultura e Desenvolvimento', cargo:'', email:'luis@example.com', listaV2:'05 - Gestao_Marketing', status:'Pendente'},
+];
+const PORTFOLIOS = {
+  parceria:{title:'Estratégia e Growth IA agêntica',url:'https://flavio-guedes.github.io/portfolio/parceria.html'},
+  produto:{title:'Produto',url:'https://flavio-guedes.github.io/portfolio/produto.html'},
+  design:{title:'Design Head e Conteúdo',url:'https://flavio-guedes.github.io/portfolio/designhead.html'},
+};
+const MESSAGE_BUILDERS = {
+  '01 - Vaga_Contratacao': c => buildWithPortfolio(c, 'Olá, ${fn},\n\nVi que a ${empresa} está com processos em aberto e fiquei curioso sobre o momento atual da equipe.\n\nAtuo na conexão entre negócio, criação, produto e IA, ajudando a estruturar operações mais eficientes. Se fizer sentido, posso compartilhar um pouco do meu trabalho e ver se há alguma oportunidade de conversa.\n\nAbraço,\nFlávio Guedes'),
+  '02 - Indicacao': c => buildWithPortfolio(c, 'Olá, ${fn},\n\nChegamos a nos falar antes através de uma indicação em comum, e queria retomar o contato.\n\nTenho atuado conectando estratégia, criação e tecnologia para estruturar projetos com mais clareza de execução. Acredito que pode valer uma conversa rápida.\n\nAbraço,\nFlávio Guedes'),
+  '03 - Recrutamento': c => buildWithPortfolio(c, 'Olá, ${fn},\n\nVi seu perfil e o trabalho que você tem desenvolvido em ${cargo}, e fiquei com vontade de trocar uma ideia.\n\nEstou com processos em andamento que conectam estratégia, criação e produto, e seu perfil chamou atenção. Se fizer sentido, podemos conversar rapidamente.\n\nAbraço,\nFlávio Guedes'),
+  '04 - Networking': c => 'Olá, '+fn(c)+',\n\nFaz tempo que não trocamos uma ideia! Queria só reativar o contato e saber como estão as coisas.\n\nSe fizer sentido, adoraria marcar um café ou call rápida em algum momento.\n\nAbraço,\nFlávio Guedes',
+  '05 - Gestao_Marketing': c => buildWithPortfolio(c, 'Olá, ${fn},\n\nVi o trabalho da ${empresa} e percebi uma conexão interessante com o que venho desenvolvendo em estratégia, criação, processos e tecnologia.\n\nTenho atuado na conexão entre negócio, criação, produto e IA para estruturar operações mais eficientes e projetos com mais clareza de execução. Acredito que pode existir uma oportunidade de conversa ou parceria.\n\nDeixo aqui um recorte do meu trabalho: [PORTFOLIO]\n\nSe fizer sentido, podemos conversar rapidamente.\n\nAbraço,\nFlávio Guedes'),
+  '06 - Parceria_Projeto': c => buildWithPortfolio(c, 'Olá, ${fn},\n\nVenho acompanhando o trabalho da ${empresa} e enxerguei um ponto de conexão com o que tenho desenvolvido em estratégia, criação e produto.\n\nAcredito que pode existir espaço para uma parceria ou projeto conjunto. Deixo aqui um recorte do meu trabalho: [PORTFOLIO]\n\nTopa uma conversa rápida?\n\nAbraço,\nFlávio Guedes'),
+  '07 - Comercial': c => 'Olá, '+fn(c)+',\n\nEstou mapeando oportunidades de projeto na área de atuação de vocês, e acredito que pode haver um encaixe interessante.\n\nPosso compartilhar mais detalhes em uma conversa rápida, sem compromisso.\n\nAbraço,\nFlávio Guedes',
+  '08 - Baixa_Relevancia': c => 'Olá, '+fn(c)+',\n\nTudo bem? Só passando para reativar o contato — se algo fizer sentido no futuro, fico à disposição.\n\nAbraço,\nFlávio Guedes',
+};
+const APPROACHES = {
+  parceria: 'Conecto estratégia, growth e IA agêntica para gerar mais demanda com menos esforço manual.',
+  produto: 'Ajudo a transformar ideias em produto real, com fluxo, priorização e entrega.',
+  design: 'Direciono design e conteúdo para gerar clareza, conversão e consistência da marca.',
+};
+const SUBJECT_OPTIONS = {
+  '01 - Vaga_Contratacao': ['Sobre a vaga em aberto','Uma ideia rápida','Conexão sobre oportunidades'],
+  '02 - Indicacao': ['Retomando contato','Indicação em comum','Vamos conversar?'],
+  '03 - Recrutamento': ['Uma oportunidade para você','Conexão sobre carreira','Vale uma conversa?'],
+  '04 - Networking': ['Reativando o contato','Bora marcar um café?','Faz tempo!'],
+  '05 - Gestao_Marketing': ['Possível parceria — [Empresa]','Uma ideia para [Empresa]','Conexão sobre estratégia'],
+  '06 - Parceria_Projeto': ['Possível projeto em conjunto','Parceria — [Empresa]','Flávio × [Empresa]'],
+  '07 - Comercial': ['Possível projeto — [Empresa]','Uma oportunidade comercial','Vale uma conversa rápida?'],
+  '08 - Baixa_Relevancia': ['Reativando contato','Só um oi!'],
+};
+const LS_SEL = 'disparos_sel_v1';
+let selected = new Set(JSON.parse(localStorage.getItem(LS_SEL) || '[]'));
+let searchTerm = '';
+let page = 1;
+const PAGE_SIZE = 40;
+let modalState = { portfolio:'parceria', batch:'all', batchIndex:0, selected:[] };
+
+function fn(nome){ if(!nome || nome.startsWith('(')) return ''; return nome.trim().split(/\s+/)[0]; }
+function empresaRef(c){ return c.empresa || c.cargo || 'seu trabalho'; }
+function buildWithPortfolio(c, tmpl){
+  const base = tmpl.replace(/\$\{fn\}/g, fn(c.nome)).replace(/\$\{empresa\}/g, empresaRef(c)).replace(/\$\{cargo\}/g, c.cargo || 'sua área');
+  const p = PORTFOLIOS[modalState.portfolio];
+  const approach = APPROACHES[modalState.portfolio] || '';
+  return base.replace('[PORTFOLIO]', p ? p.url : '').replace('Atuo na conexão entre negócio, criação, produto e IA, ajudando a estruturar operações mais eficientes.', approach);
+}
+function buildMessage(c){ return (MESSAGE_BUILDERS[c.listaV2] || MESSAGE_BUILDERS['08 - Baixa_Relevancia'])(c); }
+function subjectOptions(c){ return (SUBJECT_OPTIONS[c.listaV2] || ['Possível conversa — [Empresa]']).map(s=>s.replace('[Empresa]', empresaRef(c))); }
+
+function saveSel(){ localStorage.setItem(LS_SEL, JSON.stringify([...selected])); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); }
+
+function filteredContacts(){
+  const q = searchTerm.trim().toLowerCase();
+  return CONTACTS.filter(c=>{
+    if(!q) return true;
+    return [c.nome,c.empresa,c.email,c.cargo].join(' ').toLowerCase().includes(q);
+  });
+}
+function renderContacts(){
+  const list = filteredContacts();
+  const total = list.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(page > pages) page = pages;
+  const start = (page-1)*PAGE_SIZE;
+  const pageItems = list.slice(start, start+PAGE_SIZE);
+  const tbody = document.getElementById('contactList');
+  tbody.innerHTML = '';
+  pageItems.forEach((c,idx)=>{
+    const globalIdx = start + idx;
+    const checked = selected.has(c.email);
+    const div = document.createElement('div');
+    div.className = 'contact' + (checked ? ' sel' : '');
+    div.innerHTML = `
+      <input type="checkbox" data-email="${c.email}" ${checked ? 'checked' : ''}>
+      <div class="c-main">
+        <div class="c-top"><div class="c-name">${c.nome}</div><span class="badge badge-tier">${c.listaV2}</span></div>
+        <div class="c-empresa">${c.empresa || ''}</div>
+        <div class="c-cargo">${c.cargo || ''}</div>
+        <div class="c-email">${c.email}</div>
+      </div>
+      <div class="c-side"><select class="status-sel" data-email="${c.email}"><option>Pendente</option><option>Selecionado</option><option>Enviado</option><option>Retorno OK</option><option>Sem resposta</option><option>Ganho</option><option>Perdido</option></select></div>`;
+    tbody.appendChild(div);
+  });
+  document.getElementById('listCount').textContent = total + ' contatos';
+  document.getElementById('pageInfo').textContent = `Página ${page} de ${pages}`;
+  updateKpis();
+  bindContactEvents();
+}
+function bindContactEvents(){
+  document.querySelectorAll('#contactList input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      const email = e.target.dataset.email;
+      if(e.target.checked) selected.add(email); else selected.delete(email);
+      saveSel(); updateKpis(); renderContacts();
+    });
+  });
+  document.querySelectorAll('#contactList .status-sel').forEach(sel=>{
+    sel.value = sel.value;
+  });
+}
+function updateKpis(){
+  const selArr = CONTACTS.filter(c=> selected.has(c.email));
+  const emails = selArr.filter(c=> c.email && c.email.includes('@')).length;
+  const dup = Math.max(0, selArr.length - new Set(selArr.map(c=>(c.email||'').toLowerCase()).filter(Boolean)).size);
+  document.getElementById('kpiContatos').textContent = selArr.length;
+  document.getElementById('kpiValidos').textContent = emails;
+  document.getElementById('kpiDup').textContent = dup;
+  document.getElementById('selCount').textContent = selArr.length;
+}
+
+document.getElementById('searchInput').addEventListener('input', e=>{ searchTerm = e.target.value; page = 1; renderContacts(); });
+
+function renderPortfolioPick(){
+  const wrap = document.getElementById('portfolioPick');
+  wrap.innerHTML = '';
+  Object.keys(PORTFOLIOS).forEach(k=>{
+    const btn = document.createElement('button');
+    btn.className = 'portfolio-opt' + (modalState.portfolio === k ? ' active' : '');
+    btn.textContent = PORTFOLIOS[k].title + (k==='parceria' ? ' ✔' : '');
+    btn.dataset.key = k;
+    btn.addEventListener('click', ()=>{ modalState.portfolio = k; renderPortfolioPick(); updateDisparoMessage(); });
+    wrap.appendChild(btn);
+  });
+}
+function renderBatchPick(){
+  const wrap = document.getElementById('batchSizePick');
+  wrap.innerHTML = '';
+  [{key:'all',label:'Tudo de uma vez'},{key:'20',label:'20'},{key:'30',label:'30'},{key:'50',label:'50'}].forEach(b=>{
+    const btn = document.createElement('button');
+    btn.className = 'portfolio-opt' + (modalState.batch === b.key ? ' active' : '');
+    btn.textContent = b.label;
+    btn.addEventListener('click', ()=>{ modalState.batch = b.key; renderBatchPick(); });
+    wrap.appendChild(btn);
+  });
+}
+function updateDisparoMessage(){
+  const subjectSel = document.getElementById('mSubjectSelect');
+  const subjectInput = document.getElementById('mSubject');
+  const message = document.getElementById('mMessage');
+  const tag = document.getElementById('mMsgTag');
+  const first = modalState.selected[0];
+  if(!first){ tag.textContent = ''; return; }
+  const opts = subjectOptions(first);
+  subjectSel.innerHTML = opts.map(s=> `<option>${s}</option>`).join('');
+  subjectInput.value = opts[0] || '';
+  message.value = buildMessage(first);
+  const p = PORTFOLIOS[modalState.portfolio];
+  tag.textContent = p ? ' · ' + p.title : '';
+}
+function openDisparoModal(){
+  const selArr = CONTACTS.filter(c=> selected.has(c.email));
+  if(!selArr.length){ toast('Selecione pelo menos 1 contato'); return; }
+  modalState.selected = selArr;
+  modalState.batchIndex = 0;
+  document.getElementById('modalSub').textContent = 'Grupo selecionado';
+  document.getElementById('mContatos').textContent = selArr.length;
+  document.getElementById('mValidos').textContent = selArr.filter(c=>c.email && c.email.includes('@')).length;
+  document.getElementById('mDup').textContent = Math.max(0, selArr.length - new Set(selArr.map(c=> (c.email||'').toLowerCase()).filter(Boolean)).size);
+  renderPortfolioPick();
+  renderBatchPick();
+  updateDisparoMessage();
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeDisparoModal(){ document.getElementById('modalBg').classList.remove('open'); }
+
+document.getElementById('btnPrepararDisparo').addEventListener('click', openDisparoModal);
+document.getElementById('modalClose').addEventListener('click', closeDisparoModal);
+document.getElementById('portfolioPick').addEventListener('click', e=>{ const btn=e.target.closest('button'); if(!btn) return; modalState.portfolio = btn.dataset.key; renderPortfolioPick(); updateDisparoMessage(); });
+
+function copyText(text, msg){ navigator.clipboard.writeText(text).then(()=>toast(msg)).catch(()=>toast('Não foi possível copiar')); }
+document.getElementById('mCopyEmails').addEventListener('click', ()=>{ const emails = modalState.selected.map(c=>c.email).filter(Boolean); copyText(emails.join(', '), `${emails.length} e-mail(s) copiado(s)`); });
+document.getElementById('mCopySubject').addEventListener('click', ()=>{ copyText(document.getElementById('mSubject').value, 'Assunto copiado'); });
+document.getElementById('mCopyMessage').addEventListener('click', ()=>{ copyText(document.getElementById('mMessage').value, 'Mensagem copiada'); });
+document.getElementById('mCopyKit').addEventListener('click', ()=>{
+  const to = modalState.selected.map(c=>c.email).filter(Boolean).join(', ');
+  const subject = document.getElementById('mSubject').value;
+  const message = document.getElementById('mMessage').value;
+  copyText(`Para: ${to}\nAssunto: ${subject}\n\n${message}`, 'Kit completo copiado');
+});
+
+renderContacts();
+updateKpis();
+</script>
+</body>
+</html>

@@ -432,7 +432,7 @@
   const { createApp, ref, computed, reactive } = Vue;
   const API_BASE = 'https://epq-dd56.onrender.com';
   const STORAGE_KEY = 'epq_crm_leads_v2';
-  const stages = ['Novo','Primeiro contato','Em conversa','Interessado','Negociação','Matriculado','Perdido'];
+  const stages = ['01 - Respondeu','02 - Reuniao','03 - Em Proposta','04 - Negociando','05 - Ganho','06 - Perdaa'];
   function today(){ return new Date().toISOString().slice(0,10); }
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
   function readLeads(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
@@ -447,7 +447,7 @@
       const leadModal = ref(false);
       const createModal = ref(false);
       const currentLead = ref(null);
-      const newLead = reactive({ name: '', whatsapp: '', course: '', source: '', stage: 'Novo', temperature: 'Morno', nextFollowUp: today(), nextTime: '09:00', nextType: 'WhatsApp', nextNote: '' });
+      const newLead = reactive({ name: '', whatsapp: '', course: '', source: '', stage: '01 - Respondeu', temperature: 'Morno', nextFollowUp: today(), nextTime: '09:00', nextType: 'WhatsApp', nextNote: '' });
       const mode = ref('cloud');
       const syncStatus = ref('');
       const errorMsg = ref('');
@@ -693,7 +693,7 @@
         const now = today();
         return {
           total: list.length,
-          new: list.filter(l=>l.stage==='Novo').length,
+          new: list.filter(l=>l.stage==='01 - Respondeu').length,
           today: list.filter(l=>l.nextFollowUp===now && l.status==='ativo').length,
           late: list.filter(l=>l.nextFollowUp && l.nextFollowUp<now && l.status==='ativo').length,
           hot: list.filter(l=>l.temperature==='Quente').length,
@@ -739,7 +739,7 @@
 
       function openCreate(){ createModal.value = true; }
       function closeCreate(){ createModal.value = false; resetForm(); }
-      function resetForm(){ Object.assign(newLead, { name:'', whatsapp:'', course:'', source:'', stage:'Novo', temperature:'Morno', nextFollowUp:today(), nextTime:'09:00', nextType:'WhatsApp', nextNote:'' }); }
+      function resetForm(){ Object.assign(newLead, { name:'', whatsapp:'', course:'', source:'', stage:'01 - Respondeu', temperature:'Morno', nextFollowUp:today(), nextTime:'09:00', nextType:'WhatsApp', nextNote:'' }); }
       async function createLead(){
         const payload = toLocalPayload(newLead);
         try {
